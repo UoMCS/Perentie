@@ -64,6 +64,12 @@ class STUMPDisassembler(Disassembler):
 		0b11 : ", rrc"
 	}
 	
+	
+	def __init__(self):
+		Disassembler.__init__(self)
+		self.name = "STUMP"
+		
+	
 	def _disassemble_instr(self, instr):
 		s = ""
 		

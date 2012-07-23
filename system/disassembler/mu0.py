@@ -33,6 +33,12 @@ class MU0Disassembler(Disassembler):
 		0x07: ("STP", False),
 	}
 	
+	
+	def __init__(self):
+		Disassembler.__init__(self)
+		self.name = "MU0"
+	
+	
 	def disassemble(self, memory_interface, program_start_addr, start_addr, num_instrs):
 		"""
 		Disassembles an MU0 program

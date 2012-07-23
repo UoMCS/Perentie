@@ -8,7 +8,8 @@ The interface expected for disassemblers.
 class Disassembler(object):
 	
 	def __init__(self):
-		pass
+		# A name for the disassembler's language
+		self.name = None
 	
 	
 	def disassemble(self, memory_interface, program_start_addr, start_addr, num_instrs):
