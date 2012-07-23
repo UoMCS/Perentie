@@ -14,10 +14,7 @@ class Register(object):
 		names is a list of names which may refer to this register (the first is used
 		as the default for display/output).
 		
-		width_bits is the width in bits for this register. Due to limitations in the
-		backend (see Protocol._memory_write), these must be ni higher than 64 and
-		are rounded up to 8, 16, 32 or 64 when the register is accessed on the
-		board.
+		width_bits is the width in bits for this register.
 		
 		addr is the address of this register in the "register address space" exposed
 		by the device itself.

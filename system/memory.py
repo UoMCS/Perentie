@@ -13,12 +13,9 @@ class Memory(object):
 		names is a list of names which may refer to this memory (the first is used
 		as the default for display/output).
 		
-		addr_width_bits is the width of the address bus in bits. Up to 32-bits
-		allowed due to limitations in the backend (see Protocol._memory_write).
+		addr_width_bits is the width of the address bus in bits.
 		
-		word_width_bits is the width of a memory word in bits. Due to limitations in the
-		backend (see Protocol._memory_write) this must be no more than 64 and
-		accesses will be rounded up to either 8, 16, 32 or 64.
+		word_width_bits is the width of a memory word in bits.
 		
 		disassemblers is a list of Disassembler objects which are available for use
 		with this memory. The first is assumed to be the default disassembler.
