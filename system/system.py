@@ -1,20 +1,17 @@
 #!/usr/bin/env python
 
 """
-Top-level of the system.
+Definition of a system which can be debugged. This class should be inherited and
+fleshed-out by any CPU architecture that is desired.
 """
 
 
 class System(object):
 	
-	def __init__(self, backend):
+	def __init__(self):
 		"""
-		A base-implementation of the system. Takes a back-end to communicate with
-		the actual system.
+		A base-implementation of the system.
 		"""
-		
-		# The back-end with which the system communicates with the world
-		self.backend = backend
 		
 		# The name of the system's architecture (e.g. 'STUMP')
 		self.name = None
