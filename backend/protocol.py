@@ -495,7 +495,7 @@ class Protocol(object):
 		self.flush()
 	
 	
-	def TRAP_READ_STATUS(self):
+	def trap_read_status(self):
 		"""
 		Apply changes to all traps. Returned is {trap_num: state} where state is one of
 		Protocol.TRAP_NOT_IMPLEMENTED, TRAP_NOT_DEFINED, TRAP_INACTIVE, TRAP_ACTIVE
@@ -516,9 +516,50 @@ class Protocol(object):
 		return statuses
 	
 	
-	def memory_write(self, memory_type, element_size, address, data):
+	def memory_write(self, memory_num, element_size, address, data):
 		"""
-		Write elements of size element_size from memory/registers starting at address
+		Write elements of size element_size to the specified memory starting at
+		address for length elements. The element_size is given in bytes.
+		"""
+		# Only one bank is supported at present
+		assert(memory_num == 0)
+		
+		self._memory_write(Protocol.MEMORY_MEMORY, element_size, address, data)
+	
+	
+	def register_write(self, element_size, address, data):
+		"""
+		Write elements of size element_size to the registers starting at address for
+		length elements. The element_size is given in bytes.
+		"""
+		self._memory_write(Protocol.MEMORY_REGISTER, element_size, address, data)
+	
+	
+	def memory_read(self, memory_num, element_size, address, length):
+		"""
+		Read elements of size element_size from memory starting at address for
+		length elements. The element_size is given in bytes.
+		"""
+		# Only one bank is supported at present
+		assert(memory_num == 0)
+		
+		return self._memory_read(Protocol.MEMORY_MEMORY, element_size, address, length)
+	
+	
+	def register_read(self, element_size, address, length):
+		"""
+		Read elements of size element_size from registers starting at address for
+		length elements. The element_size is given in bytes.
+		"""
+		return self._memory_read(Protocol.MEMORY_REGISTER, element_size, address, length)
+	
+	
+	def _memory_write(self, memory_type, element_size, address, data):
+		"""
+		Internal Use: reg/mem writing function. Will presumably be replaced if/when
+		multiple memory support is added.
+		
+		Write elements of size element_size to memory/registers starting at address
 		for length elements. The element_size is given in bytes. The memory type is
 		one of Protocol.MEMORY_MEMORY or MEMORY_REGISTER.
 		"""
@@ -539,8 +580,11 @@ class Protocol(object):
 		self.flush()
 	
 	
-	def memory_read(self, memory_type, element_size, address, length):
+	def _memory_read(self, memory_type, element_size, address, length):
 		"""
+		Internal Use: reg/mem writing function. Will presumably be replaced if/when
+		multiple memory support is added.
+		
 		Read elements of size element_size from memory/registers starting at address
 		for length elements. The element_size is given in bytes. The memory type is
 		one of Protocol.MEMORY_MEMORY or MEMORY_REGISTER.
