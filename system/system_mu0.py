@@ -10,7 +10,7 @@ from register import RegisterBank, Register, Pointer, BitField
 from memory   import Memory
 
 
-class StumpSystem(System):
+class MU0System(System):
 	
 	def __init__(self):
 		"""
