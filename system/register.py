@@ -7,16 +7,17 @@ Register bank architecture modeling.
 
 class Register(object):
 	
-	def __init__(self, names, width, addr, pointer = None, bit_field = None):
+	def __init__(self, names, width_bits, addr, pointer = None, bit_field = None):
 		"""
 		A register in a system.
 		
 		names is a list of names which may refer to this register (the first is used
 		as the default for display/output).
 		
-		width is the width in bytes for this register (bytes due to limitations in
-		the backend (see Protocol._memory_write), these must also currently be
-		either 1, 2, 4 or 8).
+		width_bits is the width in bits for this register. Due to limitations in the
+		backend (see Protocol._memory_write), these must be ni higher than 64 and
+		are rounded up to 8, 16, 32 or 64 when the register is accessed on the
+		board.
 		
 		addr is the address of this register in the "register address space" exposed
 		by the device itself.
@@ -28,11 +29,11 @@ class Register(object):
 		object which describes the bit-field which the register holds (e.g. for
 		flags).
 		"""
-		self.names     = names
-		self.width     = width
-		self.addr      = addr
-		self.pointer   = pointer
-		self.bit_field = bit_field
+		self.names      = names
+		self.width_bits = width_bits
+		self.addr       = addr
+		self.pointer    = pointer
+		self.bit_field  = bit_field
 	
 	
 	@property

@@ -22,8 +22,8 @@ class StumpSystem(System):
 		
 		self.memories.append(Memory(
 			["Memory", "Main", "Store"], # Names for the main/only memory
-			2, # 16-bit (2 byte) address bus
-			2) # 16-bit (2 byte) memory words
+			16,                          # 16-bit address bus
+			16)                          # 16-bit memory words
 		)
 		
 		self._define_registers(self)
@@ -36,34 +36,34 @@ class StumpSystem(System):
 		registers = []
 		
 		# Define R0
-		self.registers.append(Register(
+		registers.append(Register(
 			["R0"], # Named R0
-			2,      # 16-bits (2 bytes) wide
+			16,     # 16-bits wide
 			0,      # At address 0 in the register address space
 			None)   # As this is always 0, don't display a pointer
 		)
 		
 		# Define R1-R6
 		for n in range(1,7):
-			self.registers.append(Register(
+			registers.append(Register(
 				["R%d"%n],    # Named Rn for each 1-6
-				2,            # 16-bits (2 bytes) wide
+				16,           # 16-bits wide
 				n,            # At address n in the register address space
 				Pointer([0])) # May point into memory 0 (the only memory)
 			)
 		
 		# Define R7
-		self.registers.append(Register(
+		registers.append(Register(
 			["PC", "R7"],       # The PC (aka R7)
-			2,                  # 16-bits (2 bytes) wide
+			16,                 # 16-bits wide
 			7,                  # At address 7 in the register address space
 			Pointer([0], "PC")) # Points into memory 0 as the PC
 		)
 		
 		# Define the flags
-		self.registers.append(Register(
+		registers.append(Register(
 			["CC", "Flags"],      # CC (aka the flags)
-			1,                    # 1-byte (CC bits padded to 8 bits)
+			4,                    # 4-bits
 			8,                    # At address 8 in the register address space
 			None,                 # Not a pointer
 			BitField(((0, "C"),
