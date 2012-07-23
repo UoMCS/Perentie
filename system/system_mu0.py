@@ -9,6 +9,9 @@ from system import System
 from register import RegisterBank, Register, Pointer, BitField
 from memory   import Memory
 
+import disassembler
+from disassembler.mu0 import MU0Disassembler
+
 
 class MU0System(System):
 	
@@ -23,7 +26,8 @@ class MU0System(System):
 		self.memories.append(Memory(
 			["Memory", "Main", "Store"], # Names for the main/only memory
 			12,                          # 12-bit addresses
-			16)                          # 16-bit memory words
+			16,                          # 16-bit memory words
+			[MU0Disassembler()])         # Use the MU0 disassembler
 		)
 		
 		self.register_banks.append(RegisterBank(["Registers"], [

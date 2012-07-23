@@ -9,6 +9,9 @@ from system import System
 from register import RegisterBank, Register, Pointer, BitField
 from memory   import Memory
 
+import disassembler
+from disassembler.stump import STUMPDisassembler
+
 
 class StumpSystem(System):
 	
@@ -23,7 +26,8 @@ class StumpSystem(System):
 		self.memories.append(Memory(
 			["Memory", "Main", "Store"], # Names for the main/only memory
 			16,                          # 16-bit address bus
-			16)                          # 16-bit memory words
+			16,                          # 16-bit memory words
+			[STUMPDisassembler()])       # Use the STUMP disassembler
 		)
 		
 		self._define_registers(self)
