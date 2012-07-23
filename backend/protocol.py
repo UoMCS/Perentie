@@ -39,12 +39,6 @@ def word(num): return i2b(num, 4)
 def dblw(num): return i2b(num, 8)
 
 
-# Round up a number of bytes to a supported element size
-def round_up(num_bytes):
-	assert(num_bytes <= 8)
-	return filter((lambda n: n >= num_bytes), [1,2,4,8])[0]
-
-
 
 class Protocol(object):
 	
@@ -522,63 +516,54 @@ class Protocol(object):
 		return statuses
 	
 	
-	def memory_write(self, memory_num, element_size_bits, address, data):
+	def memory_write(self, memory_num, element_size, address, data):
 		"""
-		Write elements of size element_size_bits to the specified memory starting at
-		address for length elements. The element_size_bits must be no larger than
-		64 and will be rounded up to 8, 16, 32 or 64.
-		"""
-		# Only one bank is supported at present
-		assert(memory_num == 0)
-		
-		self._memory_write(Protocol.MEMORY_MEMORY, element_size_bits, address, data)
-	
-	
-	def register_write(self, element_size_bits, address, data):
-		"""
-		Write elements of size element_size_bits to the registers starting at
-		address for length elements. The element_size_bits must be no larger than
-		64 and will be rounded up to 8, 16, 32 or 64.
-		"""
-		self._memory_write(Protocol.MEMORY_REGISTER, element_size_bits, address, data)
-	
-	
-	def memory_read(self, memory_num, element_size_bits, address, length):
-		"""
-		Read elements of size element_size_bits from memory starting at address for
-		length elements. The element_size_bits must be no larger than
-		64 and will be rounded up to 8, 16, 32 or 64.
+		Write elements of size element_size to the specified memory starting at
+		address for length elements. The element_size is given in bytes.
 		"""
 		# Only one bank is supported at present
 		assert(memory_num == 0)
 		
-		return self._memory_read(Protocol.MEMORY_MEMORY, element_size_bits, address, length)
+		self._memory_write(Protocol.MEMORY_MEMORY, element_size, address, data)
 	
 	
-	def register_read(self, element_size_bits, address, length):
+	def register_write(self, element_size, address, data):
 		"""
-		Read elements of size element_size_bits from registers starting at address
-		for length elements. The element_size_bits must be no larger than 64 and
-		will be rounded up to 8, 16, 32 or 64.
+		Write elements of size element_size to the registers starting at address for
+		length elements. The element_size is given in bytes.
 		"""
-		return self._memory_read(Protocol.MEMORY_REGISTER, element_size_bits, address, length)
+		self._memory_write(Protocol.MEMORY_REGISTER, element_size, address, data)
 	
 	
-	def _memory_write(self, memory_type, element_size_bits, address, data):
+	def memory_read(self, memory_num, element_size, address, length):
+		"""
+		Read elements of size element_size from memory starting at address for
+		length elements. The element_size is given in bytes.
+		"""
+		# Only one bank is supported at present
+		assert(memory_num == 0)
+		
+		return self._memory_read(Protocol.MEMORY_MEMORY, element_size, address, length)
+	
+	
+	def register_read(self, element_size, address, length):
+		"""
+		Read elements of size element_size from registers starting at address for
+		length elements. The element_size is given in bytes.
+		"""
+		return self._memory_read(Protocol.MEMORY_REGISTER, element_size, address, length)
+	
+	
+	def _memory_write(self, memory_type, element_size, address, data):
 		"""
 		Internal Use: reg/mem writing function. Will presumably be replaced if/when
 		multiple memory support is added.
 		
-		Write elements of size element_size_bits to memory/registers starting at
-		address for length elements. The protocol only supports sending and
-		recieving 1, 2, 4 and 8 byte elements and so the requested element size will
-		be rounded up to one of these values.
-		
-		The memory type is one of Protocol.MEMORY_MEMORY or MEMORY_REGISTER.
+		Write elements of size element_size to memory/registers starting at address
+		for length elements. The element_size is given in bytes. The memory type is
+		one of Protocol.MEMORY_MEMORY or MEMORY_REGISTER.
 		"""
-		# Convert to bytes and round up to nearest sendable element size.
-		element_size = round_up((element_size_bits+7) / 8)
-		
+		assert(element_size in (1, 2, 4, 8))
 		assert(len(data / element_size) < (1<<16))
 		
 		element_size_field = {
@@ -595,21 +580,16 @@ class Protocol(object):
 		self.flush()
 	
 	
-	def _memory_read(self, memory_type, element_size_bits, address, length):
+	def _memory_read(self, memory_type, element_size, address, length):
 		"""
 		Internal Use: reg/mem writing function. Will presumably be replaced if/when
 		multiple memory support is added.
 		
-		Read elements of size element_size_bits from memory/registers starting at
-		address for length elements.  The protocol only supports sending and
-		recieving 1, 2, 4 and 8 byte elements and so the requested element size will
-		be rounded up to one of these values.
-		
-		The memory type is one of Protocol.MEMORY_MEMORY or MEMORY_REGISTER.
+		Read elements of size element_size from memory/registers starting at address
+		for length elements. The element_size is given in bytes. The memory type is
+		one of Protocol.MEMORY_MEMORY or MEMORY_REGISTER.
 		"""
-		# Convert to bytes and round up to nearest sendable element size.
-		element_size = round_up((element_size_bits+7) / 8)
-		
+		assert(element_size in (1, 2, 4, 8))
 		assert(len(length) < (1<<16))
 		
 		element_size_field = {
