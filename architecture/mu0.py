@@ -4,7 +4,7 @@
 MU0 specific definition of a system.
 """
 
-from system import System
+from base import Architecture
 
 from register import RegisterBank, Register, Pointer, BitField
 from memory   import Memory
@@ -13,13 +13,13 @@ import disassembler
 from disassembler.mu0 import MU0Disassembler
 
 
-class MU0System(System):
+class MU0System(Architecture):
 	
 	def __init__(self):
 		"""
 		Define the STUMP system's memory, registers etc.
 		"""
-		System.__init__(self)
+		Architecture.__init__(self)
 		
 		self.name = "MU0"
 		

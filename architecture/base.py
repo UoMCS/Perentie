@@ -6,7 +6,7 @@ fleshed-out by any CPU architecture that is desired.
 """
 
 
-class System(object):
+class Architecture(object):
 	
 	def __init__(self):
 		"""

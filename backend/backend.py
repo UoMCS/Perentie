@@ -40,7 +40,7 @@ def dblw(num): return i2b(num, 8)
 
 
 
-class Protocol(object):
+class BackEnd(object):
 	
 	# Commands
 	NOP                  = 0x00

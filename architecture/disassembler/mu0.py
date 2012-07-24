@@ -39,7 +39,7 @@ class MU0Disassembler(Disassembler):
 		self.name = "MU0"
 	
 	
-	def disassemble(self, memory_interface, program_start_addr, start_addr, num_instrs):
+	def disassemble(self, memory_read, program_start_addr, start_addr, num_instrs):
 		"""
 		Disassembles an MU0 program
 		"""
@@ -47,7 +47,7 @@ class MU0Disassembler(Disassembler):
 		disassembly = []
 		
 		for instr_num in range(num_instrs):
-			instr = b2i(memory_interface.read(start_addr, 16, 1))
+			instr = b2i(memory_read(16, start_addr, 1))
 			
 			# Decode
 			opcode   = instr >> 12
