@@ -29,7 +29,7 @@ class STUMP(Architecture):
 			[STUMPDisassembler()])       # Use the STUMP disassembler
 		)
 		
-		self._define_registers(self)
+		self._define_registers()
 	
 	
 	def _define_registers(self):

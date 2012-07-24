@@ -15,6 +15,6 @@ def get_architecture(cpu, cpu_subtype):
 	"""
 	
 	return {
-		2: STUMP,
-		3: MU0,
+		3: STUMP,
+		4: MU0,
 	}[cpu]()
