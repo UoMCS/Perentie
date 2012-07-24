@@ -567,7 +567,7 @@ class BackEnd(object):
 		one of BackEnd.MEMORY_MEMORY or MEMORY_REGISTER.
 		"""
 		assert(element_size in (1, 2, 4, 8))
-		assert(len(length) < (1<<16))
+		assert(length < (1<<16))
 		
 		element_size_field = {
 			1 : 0b000,
