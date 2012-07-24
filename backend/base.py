@@ -115,33 +115,25 @@ class BackEnd(object):
 	STATUS_RUNNING_SWI        = 0x81
 	
 	
-	def __init__(self, inp, outp):
+	def __init__(self):
 		"""
-		Create a protocol implementation. inp and outp are objects which support the
-		standard Python file interface.
+		Create a protocol implementation.
 		"""
-		self.inp  = inp
-		self.outp = outp
+		pass
+	
+	
+	def read(self, length):
+		"""
+		Read some data from the device
+		"""
+		raise NotImplementedError("BackEnd must implement read")
 	
 	
 	def write(self, data):
 		"""
 		Write some data to the device
 		"""
-		self.outp.write(data)
-	
-	
-	def read(self, length):
-		"""
-		Read the specified number of bytes from the device. Raises exception on
-		failure.
-		"""
-		data = self.outp.read(length)
-		
-		if len(data) != length:
-			raise ReadError("Got %d bytes, expected %d"%(len(data), length))
-		
-		return data
+		raise NotImplementedError("BackEnd must implement write")
 	
 	
 	def flush(self):
@@ -149,7 +141,21 @@ class BackEnd(object):
 		Flush the output buffer (call after completing a command for which a
 		response/action is expected).
 		"""
-		self.outp.flush()
+		raise NotImplementedError("BackEnd must implement flush")
+	
+	
+	def read_exactly(self, length):
+		"""
+		Read the exactly specified number of bytes from the device. Raises exception
+		on failure. This is used to ensure that all data is read rather than
+		returning too little data silently and causing wierd bugs elsewhere.
+		"""
+		data = self.read(length)
+		
+		if len(data) != length:
+			raise ReadError("Got %d bytes, expected %d"%(len(data), length))
+		
+		return data
 	
 	
 	def nop(self):
@@ -169,7 +175,7 @@ class BackEnd(object):
 		self.flush()
 		
 		# Expect back in form OK%02d
-		response = self.read(4)
+		response = self.read_exactly(4)
 		
 		# Check for OK
 		if response[0:2] != "OK":
@@ -194,34 +200,34 @@ class BackEnd(object):
 		self.flush()
 		
 		# Get the message length
-		msg_length = b2i(self.read(2))
+		msg_length = b2i(self.read_exactly(2))
 		actual_length = 0
 		
 		# Get CPU info
-		cpu_type       = b2i(self.read(1))
-		cpu_sub_type   = b2i(self.read(2))
+		cpu_type       = b2i(self.read_exactly(1))
+		cpu_sub_type   = b2i(self.read_exactly(2))
 		actual_length += 3
 		
 		# Get features (a.k.a. peripherals)
-		feature_count  = b2i(self.read(1))
+		feature_count  = b2i(self.read_exactly(1))
 		actual_length += 1
 		
 		features = []
 		for feature_num in range(feature_count):
-			feature_id     = b2i(self.read(1))
-			feature_sub_id = b2i(self.read(2))
+			feature_id     = b2i(self.read_exactly(1))
+			feature_sub_id = b2i(self.read_exactly(2))
 			actual_length += 3
 			
 			features.append((feature_id, feature_sub_id))
 		
 		# Get memory segments
-		segment_count  = b2i(self.read(1))
+		segment_count  = b2i(self.read_exactly(1))
 		actual_length += 1
 		
 		segments = []
 		for segment_num in range(segment_count):
-			segment_addr   = b2i(self.read(4))
-			segment_length = b2i(self.read(4))
+			segment_addr   = b2i(self.read_exactly(4))
+			segment_length = b2i(self.read_exactly(4))
 			actual_length += 8
 			
 			segments.append((segment_addr, segment_length))
@@ -251,7 +257,7 @@ class BackEnd(object):
 		self.write(byte(num))
 		self.flush()
 		
-		return b2i(self.read(4))
+		return b2i(self.read_exactly(4))
 	
 	
 	def periph_set_status(self, num, status):
@@ -276,7 +282,7 @@ class BackEnd(object):
 		self.write(message)
 		self.flush()
 		
-		return b2i(self.read(1))
+		return b2i(self.read_exactly(1))
 	
 	
 	def periph_get_message(self, num, max_length = 255):
@@ -289,8 +295,8 @@ class BackEnd(object):
 		self.write(byte(max_length))
 		self.flush()
 		
-		length  = b2i(self.read(1))
-		message = self.read(length)
+		length  = b2i(self.read_exactly(1))
+		message = self.read_exactly(length)
 		
 		if length > max_length:
 			raise PeriphMessageOverflow("Expected length <= %d, got %d"%(
@@ -310,7 +316,7 @@ class BackEnd(object):
 		self.write(word(length))
 		self.flush()
 		
-		response = self.read(1)
+		response = self.read_exactly(1)
 		
 		if response == "A":
 			return
@@ -334,7 +340,7 @@ class BackEnd(object):
 		self.write(data)
 		self.flush()
 		
-		response = self.read(1)
+		response = self.read_exactly(1)
 		
 		if response == "A":
 			return
@@ -353,9 +359,9 @@ class BackEnd(object):
 		self.write(byte(BackEnd.GET_STATUS))
 		self.flush()
 		
-		status            = b2i(self.read(1))
-		steps_remaining   = b2i(self.read(4))
-		steps_since_reset = b2i(self.read(4))
+		status            = b2i(self.read_exactly(1))
+		steps_remaining   = b2i(self.read_exactly(4))
+		steps_since_reset = b2i(self.read_exactly(4))
 		
 		return (status, steps_remaining, steps_since_reset)
 	
@@ -445,12 +451,12 @@ class BackEnd(object):
 		self.write(byte(num))
 		self.flush()
 		
-		conditions = b2i(self.read(1))
-		sizes      = b2i(self.read(1))
-		addr_a     = b2i(self.read(4))
-		addr_b     = b2i(self.read(4))
-		data_a     = b2i(self.read(4))
-		data_b     = b2i(self.read(4))
+		conditions = b2i(self.read_exactly(1))
+		sizes      = b2i(self.read_exactly(1))
+		addr_a     = b2i(self.read_exactly(4))
+		addr_b     = b2i(self.read_exactly(4))
+		data_a     = b2i(self.read_exactly(4))
+		data_b     = b2i(self.read_exactly(4))
 		
 		in_user        = bool(conditions & (1<<7))
 		in_priviledged = bool(conditions & (1<<6))
@@ -505,7 +511,7 @@ class BackEnd(object):
 		self.flush()
 		
 		# Read the masks
-		bitmasks = [b2i(self.read(4)) for _ in range(2)][::-1]
+		bitmasks = [b2i(self.read_exactly(4)) for _ in range(2)][::-1]
 		
 		# Divide into each trap
 		statuses = {}
@@ -604,7 +610,7 @@ class BackEnd(object):
 		self.write(half(length))
 		self.flush()
 		
-		return self.read(length * element_size)
+		return self.read_exactly(length * element_size)
 	
 	
 	def run(self, max_steps = 0,

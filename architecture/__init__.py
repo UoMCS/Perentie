@@ -9,7 +9,7 @@ from stump import STUMP
 from mu0   import MU0
 
 
-def get_model(cpu, cpu_subtype):
+def get_architecture(cpu, cpu_subtype):
 	"""
 	Get the definition associated with the provided cpu and cpu_subtype.
 	"""

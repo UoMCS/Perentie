@@ -7,14 +7,16 @@ standard input and output pipes to the read/write interface.
 
 from subprocess import Popen, PIPE
 
+from base import BackEnd
 
-class EmulatorBackend(object):
+class EmulatorBackEnd(BackEnd):
 	
 	def __init__(self, args):
 		"""
 		Starts the emulator specified in args as a sub-process. Args should be a
 		list of the form ["executable_name", "arg1", "arg2", "etc"].
 		"""
+		BackEnd.__init__(self)
 		
 		# Start the emulator as a child-process
 		self.emulator = Popen(args,
