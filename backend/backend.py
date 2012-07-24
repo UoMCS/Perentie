@@ -156,7 +156,7 @@ class BackEnd(object):
 		"""
 		Perform a NOP
 		"""
-		self.write(byte(Protocol.NOP))
+		self.write(byte(BackEnd.NOP))
 		self.flush()
 	
 	
@@ -165,7 +165,7 @@ class BackEnd(object):
 		Ping the board. Returns the software version or raises a
 		MalformedPingResponseException if the response is invalid.
 		"""
-		self.write(byte(Protocol.PING))
+		self.write(byte(BackEnd.PING))
 		self.flush()
 		
 		# Expect back in form OK%02d
@@ -190,7 +190,7 @@ class BackEnd(object):
 		((cpu_type, cpu_sub_type), features (a.k.a. peripherals), segments) or a
 		MalformedResponseError if the length of the response is incorrect.
 		"""
-		self.write(byte(Protocol.GET_BOARD_DEFINITION))
+		self.write(byte(BackEnd.GET_BOARD_DEFINITION))
 		self.flush()
 		
 		# Get the message length
@@ -239,7 +239,7 @@ class BackEnd(object):
 		"""
 		Reset the device.
 		"""
-		self.write(byte(Protocol.RESET))
+		self.write(byte(BackEnd.RESET))
 		self.flush()
 	
 	
@@ -247,7 +247,7 @@ class BackEnd(object):
 		"""
 		Get the status of a peripheral (feature)
 		"""
-		self.write(byte(Protocol.PERIPH_GET_STATUS))
+		self.write(byte(BackEnd.PERIPH_GET_STATUS))
 		self.write(byte(num))
 		self.flush()
 		
@@ -258,7 +258,7 @@ class BackEnd(object):
 		"""
 		Set the status of a peripheral (feature)
 		"""
-		self.write(byte(Protocol.PERIPH_SET_STATUS))
+		self.write(byte(BackEnd.PERIPH_SET_STATUS))
 		self.write(byte(num))
 		self.write(word(status))
 		self.flush()
@@ -270,7 +270,7 @@ class BackEnd(object):
 		"""
 		assert(len(message) <= 255)
 		
-		self.write(byte(Protocol.PERIPH_SEND_MESSAGE))
+		self.write(byte(BackEnd.PERIPH_SEND_MESSAGE))
 		self.write(byte(num))
 		self.write(byte(len(message)))
 		self.write(message)
@@ -284,7 +284,7 @@ class BackEnd(object):
 		Get a message from a peripheral of up to max_length bytes. Returns the
 		message received.
 		"""
-		self.write(byte(Protocol.PERIPH_GET_MESSAGE))
+		self.write(byte(BackEnd.PERIPH_GET_MESSAGE))
 		self.write(byte(num))
 		self.write(byte(max_length))
 		self.flush()
@@ -305,7 +305,7 @@ class BackEnd(object):
 		of packets about to be sent is. Raises a PeriphDownloadError if not
 		accepted.
 		"""
-		self.write(byte(Protocol.PERIPH_DOWNLOAD_HEADER))
+		self.write(byte(BackEnd.PERIPH_DOWNLOAD_HEADER))
 		self.write(byte(num))
 		self.write(word(length))
 		self.flush()
@@ -328,7 +328,7 @@ class BackEnd(object):
 		"""
 		assert(len(data) <= 255)
 		
-		self.write(byte(Protocol.PERIPH_DOWNLOAD_PACKET))
+		self.write(byte(BackEnd.PERIPH_DOWNLOAD_PACKET))
 		self.write(byte(num))
 		self.write(byte(len(data)))
 		self.write(data)
@@ -350,7 +350,7 @@ class BackEnd(object):
 		Get the status of the board. Returns a tuple
 		(status, steps_remaining, steps_since_reset).
 		"""
-		self.write(byte(Protocol.GET_STATUS))
+		self.write(byte(BackEnd.GET_STATUS))
 		self.flush()
 		
 		status            = b2i(self.read(1))
@@ -364,7 +364,7 @@ class BackEnd(object):
 		"""
 		Stop the processor.
 		"""
-		self.write(byte(Protocol.STOP_EXECUTION))
+		self.write(byte(BackEnd.STOP_EXECUTION))
 		self.flush()
 	
 	
@@ -372,7 +372,7 @@ class BackEnd(object):
 		"""
 		Pause the processor without resetting the steps-remaining counter.
 		"""
-		self.write(byte(Protocol.PAUSE_EXECUTION))
+		self.write(byte(BackEnd.PAUSE_EXECUTION))
 		self.flush()
 	
 	
@@ -380,7 +380,7 @@ class BackEnd(object):
 		"""
 		Start the processor running for however many steps remain.
 		"""
-		self.write(byte(Protocol.CONTINUE_EXECUTION))
+		self.write(byte(BackEnd.CONTINUE_EXECUTION))
 		self.flush()
 	
 	
@@ -405,10 +405,10 @@ class BackEnd(object):
 		specified conditions.
 		"""
 		assert(0 <= num < 32)
-		addr_condition = addr_condition or Protocol.CONDITION_IN_RANGE
-		data_condition = data_condition or Protocol.CONDITION_IN_RANGE
+		addr_condition = addr_condition or BackEnd.CONDITION_IN_RANGE
+		data_condition = data_condition or BackEnd.CONDITION_IN_RANGE
 		
-		self.write(byte(Protocol.TRAP_DEFINE | trap_type))
+		self.write(byte(BackEnd.TRAP_DEFINE | trap_type))
 		self.write(byte(num))
 		
 		# Trap condition field
@@ -437,11 +437,11 @@ class BackEnd(object):
 		Read a trap's definition returning a dict with the same elements as the
 		arguments to trap_define so that the following is a nop.
 		
-		  trap_define(Protocol.TRAP_WATCHPOINT, 0, **trap_read(Protocol.TRAP_WATCHPOINT, 0))
+		  trap_define(BackEnd.TRAP_WATCHPOINT, 0, **trap_read(BackEnd.TRAP_WATCHPOINT, 0))
 		"""
 		assert(0 <= num < 32)
 		
-		self.write(byte(Protocol.TRAP_READ | trap_type))
+		self.write(byte(BackEnd.TRAP_READ | trap_type))
 		self.write(byte(num))
 		self.flush()
 		
@@ -477,7 +477,7 @@ class BackEnd(object):
 	def trap_set_status(self, changes):
 		"""
 		Apply changes to all traps. Changes is {trap_num: op} where op is one of
-		Protocol.TRAP_NOP, TRAP_DELETE, TRAP_DEACTIVATE, TRAP_ACTIVATE.
+		BackEnd.TRAP_NOP, TRAP_DELETE, TRAP_DEACTIVATE, TRAP_ACTIVATE.
 		"""
 		assert(max(changes.iterkeys()) < 32 and min(changes.iterkeys()) >= 0)
 		
@@ -489,7 +489,7 @@ class BackEnd(object):
 					bitmasks[bitmask] |= changes[trap_num][bitmask] << trap_num
 		
 		# Send the masks
-		self.write(byte(Protocol.TRAP_SET_STATUS))
+		self.write(byte(BackEnd.TRAP_SET_STATUS))
 		for bitmask in bitmasks[::-1]:
 			self.write(word(bitmask))
 		self.flush()
@@ -498,10 +498,10 @@ class BackEnd(object):
 	def trap_read_status(self):
 		"""
 		Apply changes to all traps. Returned is {trap_num: state} where state is one of
-		Protocol.TRAP_NOT_IMPLEMENTED, TRAP_NOT_DEFINED, TRAP_INACTIVE, TRAP_ACTIVE
+		BackEnd.TRAP_NOT_IMPLEMENTED, TRAP_NOT_DEFINED, TRAP_INACTIVE, TRAP_ACTIVE
 		"""
 		# Request the masks
-		self.write(byte(Protocol.TRAP_READ_STATUS))
+		self.write(byte(BackEnd.TRAP_READ_STATUS))
 		self.flush()
 		
 		# Read the masks
@@ -524,7 +524,7 @@ class BackEnd(object):
 		# Only one bank is supported at present
 		assert(memory_num == 0)
 		
-		self._memory_write(Protocol.MEMORY_MEMORY, element_size, address, data)
+		self._memory_write(BackEnd.MEMORY_MEMORY, element_size, address, data)
 	
 	
 	def register_write(self, element_size, address, data):
@@ -532,7 +532,7 @@ class BackEnd(object):
 		Write elements of size element_size to the registers starting at address for
 		length elements. The element_size is given in bytes.
 		"""
-		self._memory_write(Protocol.MEMORY_REGISTER, element_size, address, data)
+		self._memory_write(BackEnd.MEMORY_REGISTER, element_size, address, data)
 	
 	
 	def memory_read(self, memory_num, element_size, address, length):
@@ -543,7 +543,7 @@ class BackEnd(object):
 		# Only one bank is supported at present
 		assert(memory_num == 0)
 		
-		return self._memory_read(Protocol.MEMORY_MEMORY, element_size, address, length)
+		return self._memory_read(BackEnd.MEMORY_MEMORY, element_size, address, length)
 	
 	
 	def register_read(self, element_size, address, length):
@@ -551,7 +551,7 @@ class BackEnd(object):
 		Read elements of size element_size from registers starting at address for
 		length elements. The element_size is given in bytes.
 		"""
-		return self._memory_read(Protocol.MEMORY_REGISTER, element_size, address, length)
+		return self._memory_read(BackEnd.MEMORY_REGISTER, element_size, address, length)
 	
 	
 	def _memory_write(self, memory_type, element_size, address, data):
@@ -561,7 +561,7 @@ class BackEnd(object):
 		
 		Write elements of size element_size to memory/registers starting at address
 		for length elements. The element_size is given in bytes. The memory type is
-		one of Protocol.MEMORY_MEMORY or MEMORY_REGISTER.
+		one of BackEnd.MEMORY_MEMORY or MEMORY_REGISTER.
 		"""
 		assert(element_size in (1, 2, 4, 8))
 		assert(len(data / element_size) < (1<<16))
@@ -573,7 +573,7 @@ class BackEnd(object):
 			8 : 0b011,
 		}[element_size]
 		
-		self.write(byte(Protocol.MEMORY_WRITE | memory_type | element_size_field))
+		self.write(byte(BackEnd.MEMORY_WRITE | memory_type | element_size_field))
 		self.write(word(address))
 		self.write(half(length))
 		self.write(data)
@@ -587,7 +587,7 @@ class BackEnd(object):
 		
 		Read elements of size element_size from memory/registers starting at address
 		for length elements. The element_size is given in bytes. The memory type is
-		one of Protocol.MEMORY_MEMORY or MEMORY_REGISTER.
+		one of BackEnd.MEMORY_MEMORY or MEMORY_REGISTER.
 		"""
 		assert(element_size in (1, 2, 4, 8))
 		assert(len(length) < (1<<16))
@@ -599,7 +599,7 @@ class BackEnd(object):
 			8 : 0b011,
 		}[element_size]
 		
-		self.write(byte(Protocol.MEMORY_READ | memory_type | element_size_field))
+		self.write(byte(BackEnd.MEMORY_READ | memory_type | element_size_field))
 		self.write(word(address))
 		self.write(half(length))
 		self.flush()
@@ -615,7 +615,7 @@ class BackEnd(object):
 		Start program execution for a certain number of steps.
 		"""
 		
-		command  = Protocol.RUN
+		command  = BackEnd.RUN
 		command |= int(bool(halt_on_watchpoint))         << 5
 		command |= int(bool(halt_on_breakpoint))         << 4
 		command |= int(bool(halt_on_mem_fault))          << 3

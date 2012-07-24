@@ -5,15 +5,15 @@ Exceptions raised by the protocol.
 """
 
 
-class ProtocolException(Exception):
+class BackEndError(Exception):
 	pass
 
 
-class ReadError(ProtocolException):
+class ReadError(BackEndError):
 	pass
 
 
-class MalformedResponseError(ProtocolException):
+class MalformedResponseError(BackEndError):
 	pass
 
 
@@ -23,10 +23,10 @@ class MalformedPingResponseException(MalformedResponseError):
 		self.response = response
 
 
-class PeriphMessageOverflow(ProtocolException):
+class PeriphMessageOverflow(BackEndError):
 	pass
 
 
-class PeriphDownloadError(ProtocolException):
+class PeriphDownloadError(BackEndError):
 	pass
 
