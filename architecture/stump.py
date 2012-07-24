@@ -12,7 +12,7 @@ from memory   import Memory
 from disassembler.stump import STUMPDisassembler
 
 
-class StumpSystem(Architecture):
+class STUMP(Architecture):
 	
 	def __init__(self):
 		"""

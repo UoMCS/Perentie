@@ -13,7 +13,7 @@ import disassembler
 from disassembler.mu0 import MU0Disassembler
 
 
-class MU0System(Architecture):
+class MU0(Architecture):
 	
 	def __init__(self):
 		"""

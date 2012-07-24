@@ -1,20 +1,20 @@
 #!/usr/bin/env python
 
 """
-System model package.
+Definitions of the various architectures that can be debugged.
 """
 
 
-from system_stump import StumpSystem
-from system_mu0   import MU0System
+from stump import STUMP
+from mu0   import MU0
 
 
 def get_model(cpu, cpu_subtype):
 	"""
-	Get the model associated with the provided cpu and cpu_subtype.
+	Get the definition associated with the provided cpu and cpu_subtype.
 	"""
 	
 	return {
-		2: StumpSystem,
-		3: MU0System,
+		2: STUMP,
+		3: MU0,
 	}[cpu]()
