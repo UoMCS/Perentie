@@ -31,8 +31,8 @@ class EmulatorBackEnd(BackEnd):
 	
 	
 	def write(self, data):
-		self.emulator.stdout.write(data)
+		self.emulator.stdin.write(data)
 	
 	
 	def flush(self):
-		self.emulator.stdout.flush()
+		self.emulator.stdin.flush()
