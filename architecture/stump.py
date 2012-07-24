@@ -23,10 +23,11 @@ class STUMP(Architecture):
 		self.name = "STUMP"
 		
 		self.memories.append(Memory(
-			["Memory", "Main", "Store"], # Names for the main/only memory
-			16,                          # 16-bit address bus
-			16,                          # 16-bit memory words
-			[STUMPDisassembler()])       # Use the STUMP disassembler
+			["Memory", "Mem",
+			 "memory", "mem"],     # Names for the main/only memory
+			16,                    # 16-bit address bus
+			16,                    # 16-bit memory words
+			[STUMPDisassembler()]) # Use the STUMP disassembler
 		)
 		
 		self._define_registers()
@@ -40,7 +41,8 @@ class STUMP(Architecture):
 		
 		# Define R0
 		registers.append(Register(
-			["R0"], # Named R0
+			["R0",
+			 "r0"], # Named R0
 			16,     # 16-bits wide
 			0,      # At address 0 in the register address space
 			None)   # As this is always 0, don't display a pointer
@@ -49,7 +51,8 @@ class STUMP(Architecture):
 		# Define R1-R6
 		for n in range(1,7):
 			registers.append(Register(
-				["R%d"%n],    # Named Rn for each 1-6
+				["R%d"%n,
+				 "r%d"%n],    # Named Rn for each 1-6
 				16,           # 16-bits wide
 				n,            # At address n in the register address space
 				Pointer([0])) # May point into memory 0 (the only memory)
@@ -57,7 +60,8 @@ class STUMP(Architecture):
 		
 		# Define R7
 		registers.append(Register(
-			["PC", "R7"],       # The PC (aka R7)
+			["PC", "R7",
+			 "pc", "r7"],       # The PC (aka R7)
 			16,                 # 16-bits wide
 			7,                  # At address 7 in the register address space
 			Pointer([0], "PC")) # Points into memory 0 as the PC
@@ -65,7 +69,8 @@ class STUMP(Architecture):
 		
 		# Define the flags
 		registers.append(Register(
-			["CC", "Flags"],      # CC (aka the flags)
+			["CC", "Flags",
+			 "cc", "flags"],      # CC (aka the flags)
 			4,                    # 4-bits
 			8,                    # At address 8 in the register address space
 			None,                 # Not a pointer
@@ -75,5 +80,6 @@ class STUMP(Architecture):
 			          (3, "N")))) # The CC is a simple bit field with the flags defined
 		)
 		
-		self.register_banks.append(RegisterBank(["Registers"], registers))
+		self.register_banks.append(RegisterBank(["Registers", "Reg",
+		                                         "registers", "reg"], registers))
 

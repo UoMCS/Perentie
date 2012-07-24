@@ -24,24 +24,27 @@ class MU0(Architecture):
 		self.name = "MU0"
 		
 		self.memories.append(Memory(
-			["Memory", "Main", "Store"], # Names for the main/only memory
-			12,                          # 12-bit addresses
-			16,                          # 16-bit memory words
-			[MU0Disassembler()])         # Use the MU0 disassembler
+			["Memory", "Mem",
+			 "memory", "mem"],   # Names for the main/only memory
+			12,                  # 12-bit addresses
+			16,                  # 16-bit memory words
+			[MU0Disassembler()]) # Use the MU0 disassembler
 		)
 		
-		self.register_banks.append(RegisterBank(["Registers"], [
-				Register(["Accumulator", "ACC"],  # Named 'Accumulator' aka 'ACC'
+		self.register_banks.append(RegisterBank(["Registers", "Reg",
+		                                         "registers", "reg"], [
+				Register(["Accumulator", "ACC",
+				          "accumulator", "acc"],  # Named 'Accumulator' aka 'ACC'
 				         16,                      # 16 bits wide
 				         0,                       # At address 0 in the register address space
 				         Pointer([0])),           # May point into memory 0 (the only memory)
 				
-				Register(["PC"],                  # Named 'PC'
+				Register(["PC", "pc"],            # Named 'PC'
 				         12,                      # 12 bits wide
 				         1,                       # At address 1 in the register address space
 				         Pointer([0], "PC")),     # Points into memory 0 as the PC
 				
-				Register(["Flags"],               # Flag register
+				Register(["Flags", "flags"],      # Flag register
 				         2,                       # 2 bits wide
 				         2,                       # At address 2 in the register address space
 				         None,                    # Doesn't point into memory

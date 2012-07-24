@@ -12,7 +12,7 @@ class Register(object):
 		A register in a system.
 		
 		names is a list of names which may refer to this register (the first is used
-		as the default for display/output).
+		as the default for display/output). Must be valid python variable names.
 		
 		width_bits is the width in bits for this register.
 		
@@ -50,7 +50,8 @@ class RegisterBank(object):
 		registers.
 		
 		names is a list of names which may refer to this register bank (the first is
-		used as the default for display/output).
+		used as the default for display/output). Must be valid python variable
+		names.
 		
 		registers is a list of Registers which are contained in the bank.
 		"""
