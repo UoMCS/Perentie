@@ -1,0 +1,409 @@
+#!/usr/bin/env python
+
+"""
+A GTK+ widget for viewing a system's registers.
+"""
+
+
+import gtk, gobject
+
+from format import *
+
+
+class RegisterViewer(gtk.Notebook):
+	
+	__gsignals__ = {
+		# RegisterBank, Register, value
+		'edited': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, (object, object, object)),
+	}
+	
+	def __init__(self, system):
+		"""
+		A GTK widget that displays all the registers in a system. Each bank is
+		displayed in its own tab of a notebook widget. Tabs are hidden for systems
+		with only one register bank.
+		"""
+		gtk.Notebook.__init__(self)
+		
+		self.system = system
+		
+		# Tabs on the left
+		self.set_tab_pos(gtk.POS_LEFT)
+		
+		# Only show the tabs if there's more than one
+		self.set_show_tabs(len(self.system.architecture.register_banks) > 1)
+		
+		# Add pages for each register bank
+		for register_bank in self.system.architecture.register_banks:
+			label       = gtk.Label(register_bank.name)
+			bank_viewer = RegisterBankViewer(self.system, register_bank)
+			self.append_page(bank_viewer, label)
+			
+			# Connect to the edited signal for every register bank
+			bank_viewer.connect("edited", self._on_register_edited, register_bank)
+			
+			label.show()
+			bank_viewer.show()
+			
+			self.refresh()
+	
+	
+	def refresh(self):
+		"""
+		Fetch all register values and display them.
+		"""
+		for register_bank in self.system.architecture.register_banks:
+			for register in register_bank.registers:
+				value = self.system.read_register(register)
+				self.set_register(register_bank, register, value)
+	
+	
+	def _on_register_edited(self, bank_viewer, register, new_value, register_bank):
+		"""
+		Call-back when a a register in any register bank has been edited.  Write
+		back to the device and re-broadcast the signal including the RegisterBank.
+		"""
+		self.system.write_register(register, new_value)
+		self.refresh()
+		
+		self.emit("edited", register_bank, register, new_value)
+	
+	
+	def set_register(self, register_bank, register, value):
+		"""
+		Set the value of a register in the display given a RegisterBank and Register
+		object.
+		"""
+		# Find the widget for the requested register_bank
+		page_num = self.system.architecture.register_banks.index(register_bank)
+		bank_viewer = self.get_nth_page(page_num)
+		
+		# Set the value
+		bank_viewer.set_register(register, value)
+	
+	
+	def get_register(self, register_bank, register):
+		"""
+		Get the value of a register in the display given a RegisterBank and Register
+		object.
+		"""
+		# Find the widget for the requested register_bank
+		page_num = self.system.architecture.register_banks.index(register_bank)
+		bank_viewer = self.get_nth_page(page_num)
+		
+		# Get the value
+		return bank_viewer.get_register(register)
+
+
+
+class RegisterBankViewer(gtk.VBox):
+	
+	__gsignals__ = {
+		# Register, value
+		'edited': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, (object, object)),
+	}
+	
+	
+	def __init__(self, system, register_bank):
+		"""
+		A viewer for a single register bank. Shows integer registers in a editable
+		list, with bit-field registers shown in a notebook below this.
+		"""
+		gtk.VBox.__init__(self, homogeneous = False, spacing = 0)
+		
+		self.system        = system
+		self.register_bank = register_bank
+		
+		# A list of integer-value registers
+		self.int_registers = []
+		
+		# A list of bit-field registers
+		self.bit_registers = []
+		
+		# Divide up the registers into the bit fields and regular integers.
+		for register in self.register_bank.registers:
+			if register.bit_field is None:
+				self.int_registers.append(register)
+			else:
+				self.bit_registers.append(register)
+		
+		self._init_int_registers()
+		self._init_bit_registers()
+	
+	
+	def _init_int_registers(self):
+		"""
+		Add the integer register viewer
+		"""
+		# The list model
+		self.register_list_model = gtk.ListStore(str, str)
+		
+		# A tree view is used to display the integer registers
+		self.register_list = gtk.TreeView(self.register_list_model)
+		
+		# Define the (column name, editable) in the tree view
+		for column_num, (name, editable) in enumerate((("Register", False),
+		                                               ("Value", True))):
+			# Create a column with the appropriate name
+			column = gtk.TreeViewColumn(name)
+			
+			# Register names and values are shown as (possibly editable) strings
+			cell_renderer = gtk.CellRendererText()
+			cell_renderer.set_property("editable", editable)
+			cell_renderer.connect("edited", self._on_int_register_edited)
+			column.pack_start(cell_renderer)
+			
+			# Render the column column_num from the model in this column
+			column.add_attribute(cell_renderer, "text", column_num)
+			
+			self.register_list.append_column(column)
+		
+		# Add the registers to the list (initially empty values)
+		for register in self.int_registers:
+			self.register_list_model.append((register.name, ""))
+		
+		self.pack_start(self.register_list, expand = True, fill = True)
+		self.register_list.show()
+	
+	
+	def _init_bit_registers(self):
+		"""
+		Add the bit-field register viewers
+		"""
+		self.bit_notebook = gtk.Notebook()
+
+		for register in self.bit_registers:
+			viewer = BitFieldViewer(self.system, register)
+			label  = gtk.Label(register.name)
+			
+			self.bit_notebook.append_page(viewer, label)
+			viewer.show()
+		
+		self.bit_notebook
+		self.pack_start(self.bit_notebook, expand = False, fill = True)
+		self.bit_notebook.show()
+	
+	
+	def _on_int_register_edited(self, cell_renderer, path, new_value):
+		"""
+		Call-back when an integer register is edited.
+		"""
+		# Emit the edited event with the register and new value as arguments
+		# XXX: GTK states path may be an integer or a tuple with an int in. I don't
+		# know how to force it to be one of these but it happens to be a string
+		# here...
+		try:
+			register = self.int_registers[int(path)]
+			value    = self.system.evaluate(new_value)
+			
+			# Update the display
+			self.set_register(register, value)
+			
+			# Emit the signal
+			self.emit("edited", register, value)
+		except Exception, e:
+			# The user entered a bad value or a comm error occurred during evaluation,
+			# ignore it
+			self.system.log(e)
+	
+	
+	def set_register(self, register, value):
+		"""
+		Set the value of a register in the display given a register object.
+		"""
+		if register in self.int_registers:
+			# Format the value for display
+			formatted = format_number(value, register.width_bits)
+			
+			# Update the value in the register list
+			it = self.register_list_model.get_iter(self.int_registers.index(register))
+			self.register_list_model.set(it, 1, formatted)
+		
+		elif register in self.bit_registers:
+			# Find the bit field editor
+			index  = self.bit_registers.index(register)
+			editor = self.bit_notebook.get_nth_page(index)
+			
+			# Pass on the request to the bit-field editor
+			editor.set_value(value)
+	
+	
+	def get_register(self, register):
+		"""
+		Get the value of a register in the display given a register object.
+		"""
+		if register in self.int_registers:
+			# Get the value from the list
+			it = self.register_list_model.get_iter(self.int_registers.index(register))
+			value = self.register_list_model.get(it, 1)
+			
+			return formatted_number_to_int(value)
+		
+		elif register in self.bit_registers:
+			# Find the bit field editor
+			index  = self.bit_registers.index(register)
+			editor = self.bit_notebook.get_nth_page(index)
+			
+			# Pass on the request to the bit-field editor
+			return editor.get_value()
+
+
+
+class BitFieldViewer(gtk.HBox):
+	
+	__gsignals__ = {
+		# Returns the value
+		'edited': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, (object, )),
+	}
+	
+	# Size in chars of int/uint entry boxes
+	ENTRY_WIDTH = 6
+	
+	
+	def __init__(self, system, register):
+		"""
+		A viewer for a a single bit-field register.
+		"""
+		gtk.HBox.__init__(self, homogeneous = False)
+		
+		self.system   = system
+		self.register = register
+		
+		self.bit_field = register.bit_field
+		
+		# The full value of the bit-field
+		self.value = 0
+		
+		self.field_widgets = []
+		
+		# Add controls for each field
+		for field_type, field_name, field in zip(self.register.bit_field.field_types,
+		                                         self.register.bit_field.field_names,
+		                                         self.register.bit_field.fields):
+			if field_type == self.bit_field.BIT:
+				# A toggle button for the bit
+				widget = gtk.ToggleButton(field_name)
+				
+				widget.connect("toggled", self._on_change)
+			
+			elif field_type in (self.bit_field.INT, self.bit_field.UINT):
+				# A text-box for entering integers
+				widget = gtk.Entry()
+				widget.set_width_chars(BitFieldViewer.ENTRY_WIDTH)
+				
+				widget.connect("activate", self._on_change)
+			
+			elif field_type == self.bit_field.ENUM:
+				# A drop-down list of bit values
+				widget = gtk.combo_box_new_text()
+				map(widget.append_text, field[2].values())
+				
+				widget.connect("changed", self._on_change)
+		
+			# Set the tool-tip "field (regname[ranges])"
+			if field_type == self.bit_field.BIT:
+				ranges = "%d"%field[0]
+			else:
+				ranges = ", ".join(":".join(map(str,r)) for r in field[0])
+			widget.set_tooltip_text("%s (%s[%s])"%(field_name, self.register.name, ranges))
+			
+			# Add the widget
+			self.field_widgets.append(widget)
+			self.pack_start(widget, expand = False, fill = True)
+			widget.show()
+	
+	
+	def decode_into_widgets(self, value):
+		"""
+		Set the widget's states based on the given bit-field.
+		"""
+		decoded_field = self.bit_field.decode(value)
+		for (widget,
+		     field_type,
+		     field_wdith,
+		     field_value,
+		     field) in zip(self.field_widgets,
+		                   self.bit_field.field_types,
+		                   self.bit_field.field_widths,
+		                   decoded_field,
+		                   self.bit_field.fields):
+			
+			if field_type == self.bit_field.BIT:
+				widget.set_active(field_value)
+			
+			elif field_type in (self.bit_field.INT, self.bit_field.UINT):
+				widget.set_text(format_number(field_value, field_wdith,
+				                              field_type == self.bit_field.INT))
+			
+			elif field_type == self.bit_field.ENUM:
+				if field_value is None:
+					widget.set_active(-1)
+				else:
+					widget.set_active(field[2].values().index(field_value))
+		
+		# Store the full value of the field
+		self.value = decoded_field[-1]
+	
+	
+	def encode_from_widgets(self):
+		"""
+		Return an integer containing the bit-field.
+		"""
+		
+		field_values = []
+		# Add the value for each widget/field
+		for (widget,
+		     field_type,
+		     field_wdith,
+		     field) in zip(self.field_widgets,
+		                   self.bit_field.field_types,
+		                   self.bit_field.field_widths,
+		                   self.bit_field.fields):
+			
+			if field_type == self.bit_field.BIT:
+				field_values.append(widget.get_active())
+			
+			elif field_type in (self.bit_field.INT, self.bit_field.UINT):
+				try:
+					value = self.system.evaluate(widget.get_text())
+				except Exception, e:
+					# The user entered a bad value or a comm error occurred during evaluation,
+					# ignore it
+					self.system.log(e)
+					value = 0
+				field_values.append(value)
+			
+			elif field_type == self.bit_field.ENUM:
+				index = widget.get_active()
+				if index == -1:
+					field_values.append(None)
+				else:
+					field_values.append(field[2].values()[index])
+		
+		# Add the previous bit-field value
+		field_values.append(self.value)
+		
+		return self.bit_field.encode(field_values)
+	
+	
+	def _on_change(self, widget, *args):
+		"""
+		Call-back when a field has been changed
+		"""
+		value = self.encode_from_widgets()
+		self.set_value(value)
+		self.emit("edited", value)
+	
+	
+	def set_value(self, value):
+		"""
+		Set the value of a bit-field in the display
+		"""
+		self.decode_into_widgets(value)
+	
+	
+	def get_value(self):
+		"""
+		Get the value of a bit-field in the display
+		"""
+		return self.encode_from_widgets()
