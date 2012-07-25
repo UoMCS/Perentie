@@ -14,7 +14,7 @@ you need isn't available, please add it.
 """
 
 from back_end.exceptions import BackEndError
-from back_end.util       import b2i, bits_to_bytes
+from back_end.util       import i2b, b2i, bits_to_bytes
 
 # XXX Bodges for the back-end's limitations
 from back_end.bodge import xxx_pad_width
@@ -119,7 +119,7 @@ class DeviceMixin(object):
 			addr        = register.addr
 			length      = 1
 			data        = i2b(value, width_bytes)
-			self.back_end.register_write(width_bytes, addr, length, data)
+			self.back_end.register_write(width_bytes, addr, data)
 		
 		except BackEndError, e:
 			self.log(e)
