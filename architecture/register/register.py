@@ -109,11 +109,9 @@ class BitField(object):
 		False.
 		  (((6,2), (1,0) ...), "name", signed)
 		
-		Enumerated field (supports split field as for integer fields) where the None
-		value may be displayed if none of the others match.
+		Enumerated field (supports split field as for integer fields).
 		  (((0,1), ...), "name", {0b0000: "enum0",
-		                          0b0001: "enum1",
-		                          None:   "enum_undefined"})
+		                          0b0001: "enum1"})
 		"""
 		
 		self.fields = fields
@@ -125,6 +123,21 @@ class BitField(object):
 		Get the name of each of the fields.
 		"""
 		return [field[1] for field in self.fields]
+	
+	
+	@property
+	def field_widths(self):
+		"""
+		Get the width of each field in bits
+		"""
+		widths = []
+		for field_type, field in zip(self.field_types, self.fields):
+			if field_type == BitField.BIT:
+				widths.append(1)
+			else:
+				widths.append(sum((a-b)+1 for a,b in field[0]))
+		
+		return widths
 	
 	
 	@property
@@ -142,7 +155,7 @@ class BitField(object):
 		for field in self.fields:
 			if type(field[0]) is int:
 				field_types.append(BitField.BIT)
-			elif type(field[1]) is dict:
+			elif type(field[2]) is dict:
 				field_types.append(BitField.ENUM)
 			elif field[2] == True:
 				field_types.append(BitField.INT)
@@ -188,25 +201,27 @@ class BitField(object):
 			
 			# An integer (signed or unsigned)
 			elif field_type in (BitField.INT, BitField.UINT):
-				length, sub_field = get_sub_field(field_def[0])
+				length, sub_field = get_sub_field(field_def[0], value)
 				
-				if field_types == BitField.INT:
-					sub_field = sign_extend(sub_field)
+				if field_type == BitField.INT:
+					sub_field = sign_extend(sub_field, length)
 				
 				out.append(sub_field)
 			
 			# An enumerated type
 			elif field_type == BitField.ENUM:
-				length, sub_field = get_sub_field(field_def[0])
+				length, sub_field = get_sub_field(field_def[0], value)
 				if sub_field in field_def[2]:
 					out.append(field_def[2][sub_field])
-				elif None in field_def[2]:
-					out.append(field_def[2][None])
 				else:
 					out.append(None)
 			
 			else:
 				assert(False)
+		
+		# The last entry is the value of the whole field (so that undefined bits
+		# don't get trashed)
+		out.append(value)
 		
 		return out
 	
@@ -215,7 +230,15 @@ class BitField(object):
 		"""
 		Convert a sequence of field values into an integer field.
 		"""
-		value = 0
+		value = field_values[-1]
+		
+		
+		def clear_range(value, start, end = None):
+			"""
+			Clear the bits in the specified range (inclusive)
+			"""
+			end = end if end is not None else start
+			return value & ~(((1<<((start-end)+1))-1) << end)
 		
 		
 		def generate_sub_field(ranges, value):
@@ -250,21 +273,24 @@ class BitField(object):
 		                                              self.field_types):
 			# Single bit
 			if field_type == BitField.BIT:
+				value = clear_range(value, field_def[0])
 				value |= int(bool(field_value)) << field_def[0]
 			
 			# Integer signed/unsigned
 			elif field_type in (BitField.INT, BitField.UINT):
+				for sub_field in field_def[0]:
+					value = clear_range(value, *sub_field)
 				value |= generate_sub_field(field_def[0], field_value)
 			
-			# Enumerated type
-			elif field_type == BitField.ENUM:
+			# Enumerated type (unchanged if None)
+			elif field_type == BitField.ENUM and field_value is not None:
+				for sub_field in field_def[0]:
+					value = clear_range(value, *sub_field)
+				
 				# Get the value associated with this enumeration value (default to 0)
 				enum_key = enum_val_to_key(field_def[2], field_value) or 0
 				
 				# Expand it over the subfields of the bit-field.
 				value |= generate_sub_field(field_def[0], enum_key)
-			
-			else:
-				assert(None)
 		
 		return value
