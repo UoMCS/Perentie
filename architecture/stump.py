@@ -74,10 +74,10 @@ class STUMP(Architecture):
 			4,                    # 4-bits
 			8,                    # At address 8 in the register address space
 			None,                 # Not a pointer
-			BitField(((0, "C"),
-			          (1, "V"),
+			BitField(((3, "N"),
 			          (2, "Z"),
-			          (3, "N")))) # The CC is a simple bit field with the flags defined
+			          (1, "V"),
+			          (0, "C")))) # The CC is a simple bit field with the flags defined
 		)
 		
 		self.register_banks.append(RegisterBank(["Registers", "Reg",
