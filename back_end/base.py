@@ -540,8 +540,9 @@ class BackEnd(object):
 		for length elements. The element_size is given in bytes. The memory type is
 		one of BackEnd.MEMORY_MEMORY or MEMORY_REGISTER.
 		"""
+		length = (len(data) / element_size)
 		assert(element_size in (1, 2, 4, 8))
-		assert(len(data / element_size) < (1<<16))
+		assert(length < (1<<16))
 		
 		element_size_field = {
 			1 : 0b000,
