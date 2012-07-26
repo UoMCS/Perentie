@@ -22,13 +22,16 @@ class STUMP(Architecture):
 		
 		self.name = "STUMP"
 		
-		self.memories.append(Memory(
+		self.word_width_bits = 16
+		
+		memory = Memory(
 			["Memory", "Mem",
 			 "memory", "mem"],     # Names for the main/only memory
 			16,                    # 16-bit address bus
 			16,                    # 16-bit memory words
 			[STUMPDisassembler()]) # Use the STUMP disassembler
-		)
+
+		self.memories.append(memory)
 		
 		self._define_registers()
 	
@@ -52,19 +55,19 @@ class STUMP(Architecture):
 		for n in range(1,7):
 			registers.append(Register(
 				["R%d"%n,
-				 "r%d"%n],    # Named Rn for each 1-6
-				16,           # 16-bits wide
-				n,            # At address n in the register address space
-				Pointer([0])) # May point into memory 0 (the only memory)
+				 "r%d"%n],         # Named Rn for each 1-6
+				16,                # 16-bits wide
+				n,                 # At address n in the register address space
+				Pointer([memory])) # May point into memory
 			)
 		
 		# Define R7
 		registers.append(Register(
 			["PC", "R7",
-			 "pc", "r7"],       # The PC (aka R7)
-			16,                 # 16-bits wide
-			7,                  # At address 7 in the register address space
-			Pointer([0], "PC")) # Points into memory 0 as the PC
+			 "pc", "r7"],            # The PC (aka R7)
+			16,                      # 16-bits wide
+			7,                       # At address 7 in the register address space
+			Pointer([memory], "PC")) # Points into memory as the PC
 		)
 		
 		# Define the flags

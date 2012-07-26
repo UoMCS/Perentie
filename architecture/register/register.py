@@ -70,19 +70,19 @@ class RegisterBank(object):
 
 class Pointer(object):
 	
-	def __init__(self, memory_nums, category = None):
+	def __init__(self, memories, category = None):
 		"""
 		An object which defines that a register it is held by is pointing into
 		memory.
 		
-		memory_nums is a list of memories into which this register might be a
+		memories is a list of Memory objects into which this register might be a
 		pointer.
 		
 		category is an optional string which defines the type of pointer this is or
 		None if it is general purpose. Examples would be "PC" or "LR".
 		"""
-		self.memory_nums = memory_nums
-		self.category    = category
+		self.memories = memories
+		self.category = category
 
 
 

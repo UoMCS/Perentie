@@ -17,19 +17,22 @@ class MU0(Architecture):
 	
 	def __init__(self):
 		"""
-		Define the STUMP system's memory, registers etc.
+		Define the MU0 system's memory, registers etc.
 		"""
 		Architecture.__init__(self)
 		
 		self.name = "MU0"
 		
-		self.memories.append(Memory(
+		self.word_width_bits = 16
+		
+		memory = Memory(
 			["Memory", "Mem",
 			 "memory", "mem"],   # Names for the main/only memory
 			12,                  # 12-bit addresses
 			16,                  # 16-bit memory words
 			[MU0Disassembler()]) # Use the MU0 disassembler
-		)
+		
+		self.memories.append(memory)
 		
 		self.register_banks.append(RegisterBank(["Registers", "Reg",
 		                                         "registers", "reg"], [
@@ -37,12 +40,12 @@ class MU0(Architecture):
 				          "accumulator", "acc"],  # Named 'Accumulator' aka 'ACC'
 				         16,                      # 16 bits wide
 				         0,                       # At address 0 in the register address space
-				         Pointer([0])),           # May point into memory 0 (the only memory)
+				         Pointer([memory])),      # May point into memory
 				
 				Register(["PC", "pc"],            # Named 'PC'
 				         12,                      # 12 bits wide
 				         1,                       # At address 1 in the register address space
-				         Pointer([0], "PC")),     # Points into memory 0 as the PC
+				         Pointer([memory], "PC")),# Points into memory as the PC
 				
 				Register(["Flags", "flags"],      # Flag register
 				         2,                       # 2 bits wide
