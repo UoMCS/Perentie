@@ -26,6 +26,7 @@ class MU0(Architecture):
 		self.word_width_bits = 16
 		
 		memory = Memory(
+			0,                   # The zeroth and only memory
 			["Memory", "Mem",
 			 "memory", "mem"],   # Names for the main/only memory
 			12,                  # 12-bit addresses

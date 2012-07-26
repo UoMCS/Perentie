@@ -124,3 +124,55 @@ class DeviceMixin(object):
 		except BackEndError, e:
 			self.log(e)
 
+	
+	def read_memory(self, memory, elem_size_words, addr, length):
+		"""
+		Read from a memory as given in the Architecture. Returns a list of elements
+		as integers of the number of words specified. If a location cannot be read,
+		-1s are returned.
+		"""
+		try:
+			self.resync()
+			
+			# Size of elements to read
+			elem_size_bits = elem_size_words * memory.word_width_bits
+			width_bytes = bits_to_bytes(xxx_pad_width(elem_size_bits))
+			
+			# Read the data from memory
+			data = self.back_end.memory_read(memory.index, width_bytes, addr, length)
+			
+			# Decode into ints
+			out = []
+			for element in range(length):
+				out.append(b2i(data[:width_bytes]))
+				data = data[width_bytes:]
+			
+			# Return the value
+			return out
+		
+		except BackEndError, e:
+			self.log(e)
+			return [-1] * length
+	
+	
+	def write_memory(self, memory, elem_size_words, addr, length, data):
+		"""
+		Write to a memory as given in the Architecture.
+		"""
+		# Remove the value from the cache (when re-reading read the value from the
+		# device in-case the register is changed on write.
+		if register in self.cached_registers:
+			del self.cached_registers[register]
+		
+		try:
+			self.resync()
+			
+			# Write the register
+			width_bytes = bits_to_bytes(xxx_pad_width(register.width_bits))
+			addr        = register.addr
+			length      = 1
+			data        = i2b(value, width_bytes)
+			self.back_end.register_write(width_bytes, addr, data)
+		
+		except BackEndError, e:
+			self.log(e)

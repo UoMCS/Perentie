@@ -25,6 +25,7 @@ class STUMP(Architecture):
 		self.word_width_bits = 16
 		
 		memory = Memory(
+			0,                   # The zeroth and only memory
 			["Memory", "Mem",
 			 "memory", "mem"],     # Names for the main/only memory
 			16,                    # 16-bit address bus
