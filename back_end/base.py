@@ -602,4 +602,5 @@ class BackEnd(object):
 		command |= int(bool(break_on_first_instruction)) << 0
 		
 		self.write(byte(command))
+		self.write(word(max_steps))
 		self.flush()

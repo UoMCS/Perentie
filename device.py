@@ -178,3 +178,37 @@ class DeviceMixin(object):
 		
 		except BackEndError, e:
 			self.log(e)
+	
+	
+	def reset(self):
+		try:
+			self.back_end.reset()
+		except BackEndError, e:
+			self.log(e)
+	
+	
+	def reset(self):
+		try:
+			self.back_end.reset()
+		except BackEndError, e:
+			self.log(e)
+	
+	
+	def run(self, max_steps = 0,
+	        halt_on_watchpoint = True, halt_on_breakpoint = True,
+	        halt_on_mem_fault = False, step_over_swi = False,
+	        step_over_bl = False, break_on_first_instruction = True):
+		try:
+			self.back_end.run(max_steps,
+			                  halt_on_watchpoint, halt_on_breakpoint, halt_on_mem_fault,
+			                  step_over_swi, step_over_bl,
+			                  break_on_first_instruction)
+		except BackEndError, e:
+			self.log(e)
+	
+	
+	def stop(self):
+		try:
+			self.back_end.stop_execution()
+		except BackEndError, e:
+			self.log(e)

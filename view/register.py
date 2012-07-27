@@ -192,6 +192,8 @@ class RegisterBankViewer(gtk.VBox):
 			viewer = BitFieldViewer(self.system, register)
 			label  = gtk.Label(register.name)
 			
+			viewer.connect("edited", self._on_bit_register_edited)
+			
 			self.bit_notebook.append_page(viewer, label)
 			viewer.show()
 		
@@ -234,11 +236,27 @@ class RegisterBankViewer(gtk.VBox):
 			register = self.int_registers[int(path)]
 			value    = self.system.evaluate(new_value)
 			
-			# Update the display
-			self.refresh()
-			
 			# Emit the signal
 			self.emit("edited", register, value)
+		except Exception, e:
+			# The user entered a bad value or a comm error occurred during evaluation,
+			# ignore it
+			self.system.log(e)
+	
+	
+	def _on_bit_register_edited(self, bit_field_viewer, new_value):
+		"""
+		Call-back when an integer register is edited.
+		"""
+		# Emit the edited event with the register and new value as arguments
+		try:
+			# XXX: GTK states path may be an integer or a tuple with an int in. I
+			# don't know how to force it to be one of these but it happens to be a
+			# string here...
+			register = bit_field_viewer.register
+			
+			# Emit the signal
+			self.emit("edited", register, new_value)
 		except Exception, e:
 			# The user entered a bad value or a comm error occurred during evaluation,
 			# ignore it
