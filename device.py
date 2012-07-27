@@ -155,24 +155,26 @@ class DeviceMixin(object):
 			return [-1] * length
 	
 	
-	def write_memory(self, memory, elem_size_words, addr, length, data):
+	def write_memory(self, memory, elem_size_words, addr, data):
 		"""
 		Write to a memory as given in the Architecture.
 		"""
 		# Remove the value from the cache (when re-reading read the value from the
 		# device in-case the register is changed on write.
-		if register in self.cached_registers:
-			del self.cached_registers[register]
-		
 		try:
 			self.resync()
 			
-			# Write the register
-			width_bytes = bits_to_bytes(xxx_pad_width(register.width_bits))
-			addr        = register.addr
-			length      = 1
-			data        = i2b(value, width_bytes)
-			self.back_end.register_write(width_bytes, addr, data)
+			# Size of elements to write
+			elem_size_bits = elem_size_words * memory.word_width_bits
+			width_bytes = bits_to_bytes(xxx_pad_width(elem_size_bits))
+			
+			# Decode from ints
+			out = ""
+			for element in data:
+				out += i2b(element, width_bytes)
+			
+			# Write the data from memory
+			data = self.back_end.memory_write(memory.index, width_bytes, addr, out)
 		
 		except BackEndError, e:
 			self.log(e)

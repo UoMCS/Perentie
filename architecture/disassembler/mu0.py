@@ -7,18 +7,6 @@ An MU0 disassembler
 from disassembler import Disassembler
 
 
-def b2i(data):
-	"""
-	Convert a stream of bytes into a number
-	"""
-	out = 0
-	for char in data[::-1]:
-		out <<= 8
-		out |= ord(char)
-	return out
-
-
-
 class MU0Disassembler(Disassembler):
 	
 	INSTRUCTIONS = {
@@ -47,18 +35,25 @@ class MU0Disassembler(Disassembler):
 		disassembly = []
 		
 		for instr_num in range(num_instrs):
-			instr = b2i(memory_read(16, start_addr, 1))
+			instr = memory_read(start_addr, 1)[0]
 			
 			# Decode
 			opcode   = instr >> 12
 			argument = instr & ((1<<12) - 1)
 			
 			# Disassemble
-			mnemonic, has_argument = MU0Disassembler.INSTRUCTIONS[opcode]
-			if has_argument:
-				mnemonic += " 0x%03X"%(argument)
+			if opcode in MU0Disassembler.INSTRUCTIONS:
+				mnemonic, has_argument = MU0Disassembler.INSTRUCTIONS[opcode]
+				if has_argument:
+					mnemonic += " 0x%03X"%(argument)
+			else:
+				# Unknown instruction
+				mnemonic = "(unknown)"
 			
-			disassembly.append((16, mnemonic))
+			disassembly.append((start_addr, 16, instr, mnemonic))
+			
+			# Next instruction
+			start_addr += 1
 		
 		return disassembly
 

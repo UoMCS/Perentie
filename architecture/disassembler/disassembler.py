@@ -16,10 +16,10 @@ class Disassembler(object):
 		"""
 		Given the starting address of a program, disassemble num_instrs starting
 		from start_addr as found in memory_read. Should return a list of
-		num_instrs tuples (num_instr_bits, instr_asm).
+		num_instrs tuples (addr, num_instr_bits, instr_bits, instr_asm).
 		
 		The memory interface should be a callable:
-		memory_read(word_width_bits, addr, num_words) -> str (bytes)
+		memory_read(addr, num_words) -> [int, ...]
 		"""
 		raise NotImplementedError("Disassembler not implemented!")
 

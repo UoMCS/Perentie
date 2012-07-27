@@ -6,9 +6,11 @@ Memory parameter container.
 
 class Memory(object):
 	
-	def __init__(self, names, addr_width_bits, word_width_bits, disassemblers = None, size = None):
+	def __init__(self, index, names, addr_width_bits, word_width_bits, disassemblers = None, size = None):
 		"""
 		A memory in a system.
+		
+		index is the unique index the memory is identified by
 		
 		names is a list of names which may refer to this memory (the first is used
 		as the default for display/output).
@@ -24,6 +26,7 @@ class Memory(object):
 		size is the size of the memory in words. Defaults to the maximum addressable
 		ammount.
 		"""
+		self.index           = index
 		self.names           = names
 		self.addr_width_bits = addr_width_bits
 		self.word_width_bits = word_width_bits

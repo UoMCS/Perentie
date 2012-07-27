@@ -22,7 +22,7 @@ def sign_extend(value, bits):
 	"""
 	Sign extend the b-bit number n into a python integer
 	"""
-	return value | ((-1<<length) if bool(value >> length-1) else 0)
+	return value | ((-1<<bits) if bool(value >> (bits-1)) else 0)
 
 
 class STUMPDisassembler(Disassembler):
@@ -142,8 +142,12 @@ class STUMPDisassembler(Disassembler):
 		disassembly = []
 		
 		for instr_num in range(num_instrs):
-			instr = b2i(memory_read(16, start_addr, 1))
-			disassembly.append((16, self._disassemble_instr(instr)))
+			instr = memory_read(start_addr, 1)[0]
+			
+			disassembly.append((start_addr, 16, instr, self._disassemble_instr(instr)))
+			
+			# Next instruction
+			start_addr += 1
 		
 		return disassembly
 

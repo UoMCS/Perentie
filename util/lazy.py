@@ -56,3 +56,34 @@ def lazy(f):
 	return newf
 
 
+class _AsNeededWrapper:
+	"""
+	Perform the function action every time the value is requested
+	
+	An addition by Jonathan Heathcote.
+	"""
+	
+	def __init__(self, f, args, kwargs):
+		self._func = f
+		self._args = args
+		self._kwargs = kwargs
+
+	def __getattr__(self, name):
+		if name in ["_func", "_args", "_kwargs"]:
+			return self.__dict__[name]
+		return self._func(*self._args, **self._kwargs).__getattribute__(name)
+
+	def __setattr__(self, name, val):
+		if name in ["_func", "_args", "_kwargs"]:
+			self.__dict__[name] = val
+			return
+		setattr(self._func(*self._args, **self._kwargs), name, val)
+		return
+
+
+def as_needed(f):
+	"Evaluate every time the value is needed evaluation decorator"
+	def newf(*args, **kwargs):
+		return _AsNeededWrapper(f, args, kwargs)
+
+	return newf

@@ -16,6 +16,9 @@ class Architecture(object):
 		# The name of the system's architecture (e.g. 'STUMP')
 		self.name = None
 		
+		# The number of bits in a "word" on this architecture
+		self.word_width_bits = None
+		
 		# List of RegisterBanks within the system. The first register bank is
 		# considered to be the "default" unless otherwise stated.
 		self.register_banks = []

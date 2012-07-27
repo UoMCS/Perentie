@@ -44,18 +44,23 @@ class RegisterViewer(gtk.Notebook):
 			
 			label.show()
 			bank_viewer.show()
-			
-			self.refresh()
+		
+		self.connect("switch-page", self._on_page_change)
+		
+		self.refresh()
+	
+	
+	def _on_page_change(self, notebook, page, page_num):
+		self.refresh()
 	
 	
 	def refresh(self):
 		"""
-		Fetch all register values and display them.
+		Fetch all visible registers.
 		"""
-		for register_bank in self.system.architecture.register_banks:
-			for register in register_bank.registers:
-				value = self.system.read_register(register)
-				self.set_register(register_bank, register, value)
+		register_bank_viewer = self.get_nth_page(self.get_current_page())
+		if register_bank_viewer is not None:
+			register_bank_viewer.refresh()
 	
 	
 	def _on_register_edited(self, bank_viewer, register, new_value, register_bank):
@@ -141,6 +146,10 @@ class RegisterBankViewer(gtk.VBox):
 		# A tree view is used to display the integer registers
 		self.register_list = gtk.TreeView(self.register_list_model)
 		
+		# The row of the interger register being edited. This row will not be
+		# refreshed to prevent the editor being killed.
+		self.editing_row = None
+		
 		# Define the (column name, editable) in the tree view
 		for column_num, (name, editable) in enumerate((("Register", False),
 		                                               ("Value", True))):
@@ -150,7 +159,14 @@ class RegisterBankViewer(gtk.VBox):
 			# Register names and values are shown as (possibly editable) strings
 			cell_renderer = gtk.CellRendererText()
 			cell_renderer.set_property("editable", editable)
-			cell_renderer.connect("edited", self._on_int_register_edited)
+			if editable:
+				cell_renderer.set_property("font", "monospace")
+			
+			# Set up renderer's editing events
+			cell_renderer.connect("editing-started",  self._on_int_register_editing_started)
+			cell_renderer.connect("editing-canceled", self._on_int_register_editing_canceled)
+			cell_renderer.connect("edited",           self._on_int_register_edited)
+			
 			column.pack_start(cell_renderer)
 			
 			# Render the column column_num from the model in this column
@@ -184,20 +200,42 @@ class RegisterBankViewer(gtk.VBox):
 		self.bit_notebook.show()
 	
 	
+	def _on_int_register_editing_started(self, renderer, editable, path):
+		"""
+		Called when the user starts editing a cell.
+		"""
+		# The user has started editing this row. Do not update it!
+		# XXX: GTK states path may be an integer or a tuple with an int in. I don't
+		# know how to force it to be one of these but it happens to be a string
+		# here...
+		self.editing_row = int(path)
+	
+	
+	def _on_int_register_editing_canceled(self, renderer):
+		"""
+		Called when a cell was being edited but the attempt was canceled.
+		"""
+		self.editing_row = None
+		
+		# Refresh to ensure the row is updated after being locked for editing
+		self.refresh()
+	
+	
 	def _on_int_register_edited(self, cell_renderer, path, new_value):
 		"""
 		Call-back when an integer register is edited.
 		"""
 		# Emit the edited event with the register and new value as arguments
-		# XXX: GTK states path may be an integer or a tuple with an int in. I don't
-		# know how to force it to be one of these but it happens to be a string
-		# here...
+		self.editing_row = None
 		try:
+			# XXX: GTK states path may be an integer or a tuple with an int in. I
+			# don't know how to force it to be one of these but it happens to be a
+			# string here...
 			register = self.int_registers[int(path)]
 			value    = self.system.evaluate(new_value)
 			
 			# Update the display
-			self.set_register(register, value)
+			self.refresh()
 			
 			# Emit the signal
 			self.emit("edited", register, value)
@@ -215,8 +253,15 @@ class RegisterBankViewer(gtk.VBox):
 			# Format the value for display
 			formatted = format_number(value, register.width_bits)
 			
+			# Get the row-number
+			row = self.int_registers.index(register)
+			
+			# Don't update the currently-edited row!
+			if row == self.editing_row:
+				return
+			
 			# Update the value in the register list
-			it = self.register_list_model.get_iter(self.int_registers.index(register))
+			it = self.register_list_model.get_iter(row)
 			self.register_list_model.set(it, 1, formatted)
 		
 		elif register in self.bit_registers:
@@ -246,6 +291,15 @@ class RegisterBankViewer(gtk.VBox):
 			
 			# Pass on the request to the bit-field editor
 			return editor.get_value()
+	
+	
+	def refresh(self):
+		"""
+		Update all registers in this bank.
+		"""
+		for register in self.register_bank.registers:
+			value = self.system.read_register(register)
+			self.set_register(register, value)
 
 
 

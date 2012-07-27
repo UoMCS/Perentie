@@ -17,11 +17,12 @@ Available variables:
 """
 
 from collections import namedtuple
-from util.lazy   import lazy
+from util.lazy   import as_needed
 
 ################################################################################
 
 from math import *
+from functools import reduce
 
 def log2(num):
 	return log(num,2)
@@ -79,9 +80,17 @@ class EvaluatorMixin(object):
 		self.evaluator_local_vars["float"] = float
 		self.evaluator_local_vars["ord"]   = ord
 		self.evaluator_local_vars["chr"]   = chr
+		
+		# Functional stuff
+		self.evaluator_local_vars["sum"]    = sum
+		self.evaluator_local_vars["map"]    = map
+		self.evaluator_local_vars["reduce"] = reduce
+		
+		self._add_memory_accessors()
+		self._add_register_accessors()
 	
 	
-	@lazy
+	@as_needed
 	def lazy_read_register(self, register):
 		"""
 		This function returns a variable-like object which, when accessed, requests
@@ -92,7 +101,47 @@ class EvaluatorMixin(object):
 		return self.read_register(register)
 	
 	
-	def _add_register_accessors(self, local_vars):
+	class MemoryAccessor(object):
+		"""
+		A memory accessor object which behaves like an array.
+		"""
+		
+		def __init__(self, system, memory):
+			self.system = system
+			self.memory = memory
+		
+		
+		def __getitem__(self, start):
+			return self(start)[0]
+		
+		
+		def __getslice__(self, start, end):
+			return self(start, end)
+		
+		
+		def __call__(self, start, end = None, elem_size = 1):
+			"""
+			Read from the start address up to the end address getting elements of the
+			given size (in words)
+			"""
+			assert(elem_size >= 1)
+			
+			if end is None:
+				end = start + elem_size
+			
+			assert(start < end)
+			length = (end - start) / elem_size
+			return self.system.read_memory(self.memory, elem_size, start, length)
+	
+	
+	def _add_memory_accessors(self):
+		for memory in self.architecture.memories:
+			accessor = EvaluatorMixin.MemoryAccessor(self, memory)
+			for name in memory.names:
+				self.evaluator_local_vars[name] = accessor
+	
+	
+	def _add_register_accessors(self):
 		"""
 		Add register accessors to the local_vars dictionary.
 		"""
@@ -110,7 +159,7 @@ class EvaluatorMixin(object):
 					# If this is the first register bank, its registers are available
 					# without using a prefix.
 					if num == 0:
-						local_vars[name] = lazy_accessor
+						self.evaluator_local_vars[name] = lazy_accessor
 			
 			# Create an object which has a property for each register
 			RegisterBankTuple = namedtuple(register_bank.name,
@@ -119,7 +168,7 @@ class EvaluatorMixin(object):
 			
 			# Add this register bank under each of its aliases
 			for name in register_bank.names:
-				local_vars[name] = register_bank_tuple
+				self.evaluator_local_vars[name] = register_bank_tuple
 	
 	
 	def evaluate(self, expr):
@@ -127,10 +176,5 @@ class EvaluatorMixin(object):
 		Evaluate an expression within the context of the system. Expressions should
 		be valid python expressions with various variables defined.
 		"""
-		# Copy the pre-calculated set of local vars to add to
-		local_vars = self.evaluator_local_vars.copy()
 		
-		# Add accessors for registers.
-		self._add_register_accessors(local_vars)
-		
-		return int(eval(expr, self.evaluator_global_vars, local_vars))
+		return int(eval(expr, self.evaluator_global_vars, self.evaluator_local_vars))

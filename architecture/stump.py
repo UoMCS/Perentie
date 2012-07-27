@@ -34,10 +34,10 @@ class STUMP(Architecture):
 
 		self.memories.append(memory)
 		
-		self._define_registers()
+		self._define_registers(memory)
 	
 	
-	def _define_registers(self):
+	def _define_registers(self, memory):
 		"""
 		Define all the STUMP's registers.
 		"""
