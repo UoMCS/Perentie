@@ -17,6 +17,8 @@ class SerialPortBackEnd(BackEnd):
 		"""
 		BackEnd.__init__(self)
 		
+		self.name = "Serial"
+		
 		# Start the emulator as a child-process
 		self.serial = Serial(port,
 		                     baudrate     = baudrate,

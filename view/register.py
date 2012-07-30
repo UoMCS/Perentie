@@ -241,7 +241,7 @@ class RegisterBankViewer(gtk.VBox):
 		except Exception, e:
 			# The user entered a bad value or a comm error occurred during evaluation,
 			# ignore it
-			self.system.log(e)
+			self.system.log(e, True)
 	
 	
 	def _on_bit_register_edited(self, bit_field_viewer, new_value):
@@ -441,7 +441,7 @@ class BitFieldViewer(gtk.HBox):
 				except Exception, e:
 					# The user entered a bad value or a comm error occurred during evaluation,
 					# ignore it
-					self.system.log(e)
+					self.system.log(e, True)
 					value = 0
 				field_values.append(value)
 			

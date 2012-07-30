@@ -40,9 +40,13 @@ class MemoryViewer(gtk.VBox):
 		'edited': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, tuple()),
 	}
 	
-	def __init__(self, system, memory):
+	def __init__(self, system, memory, show_disassembly = True):
 		"""
 		A memory viewing/editing tool for the specified memory in the given system.
+		
+		If show_disassembly is True, the initial memory table will be a disassembly,
+		otherwise it will be a single-CPU-word memory table and failing that, a
+		single memory word.
 		"""
 		gtk.VBox.__init__(self, homogeneous = False)
 		
@@ -51,6 +55,11 @@ class MemoryViewer(gtk.VBox):
 		
 		# The address to follow (if required)
 		self.addr_expression = ""
+		
+		# Important types of table (indexes into self.memory_tables) set by
+		# _create_memory_tables
+		self.table_disassembly = None
+		self.table_cpu_word    = None
 		
 		# Initialise the list of memory tables viewable
 		self._create_memory_tables()
@@ -72,8 +81,20 @@ class MemoryViewer(gtk.VBox):
 		self.memory_table_viewer.connect("scrolled", self._on_scroll)
 		self.memory_table_viewer.connect("edited", self._on_edited)
 		
-		# Default to the first memory table
-		self.memory_table_viewer.set_memory_table(self.memory_tables[0][1])
+		# Work out the default table to show
+		if show_disassembly and self.table_disassembly is not None:
+			# Show a disassembly if possible
+			table = self.table_disassembly
+		elif self.table_cpu_word is not None:
+			# Show a cpu word if possible
+			table = self.table_cpu_word
+		else:
+			# Otherwise just show whatever we've got
+			table = 0
+		
+		# Select the default table
+		self.view_combo_box.set_active(table)
+		self.memory_table_viewer.set_memory_table(self.memory_tables[table][1])
 	
 	
 	def _create_memory_tables(self):
@@ -86,6 +107,10 @@ class MemoryViewer(gtk.VBox):
 		
 		# Add each disassembler supported by the memory
 		for (assembler, disassembler) in self.memory.assemblers:
+			# If no disassembly table has been selected, chose this one (the first)
+			if self.table_disassembly is None:
+				self.table_disassembly = len(self.memory_tables)
+			
 			self.memory_tables.append(("Disassembly (%s)"%disassembler.name,
 			                          DisassemblyTable(self.system,
 			                                           self.memory,
@@ -118,10 +143,16 @@ class MemoryViewer(gtk.VBox):
 				continue
 			
 			# Separator
-			self.memory_tables.append(("", None))
+			if len(self.memory_tables) > 0:
+				self.memory_tables.append(("", None))
 			
 			# Get the human-friendly size name
 			size_name = size_names[elem_size_bits]
+			
+			# If no CPU-word memory table has been selected, use this one if it is
+			if size_name == "Word" and self.table_cpu_word is None:
+				self.table_cpu_word = len(self.memory_tables)
+			
 			
 			for num_elems in [1,2,4,8,16]:
 				self.memory_tables.append(("%d %s%s (%d × %d = %d Bits)"%(
@@ -176,9 +207,6 @@ class MemoryViewer(gtk.VBox):
 		
 		# Add the word sizes
 		map(self.view_combo_box.append_text, (name for name,_ in self.memory_tables))
-		
-		# Default to disassembly
-		self.view_combo_box.set_active(0)
 		
 		self.toolbar.pack_end(self.view_combo_box, expand = False, fill=True)
 		self.view_combo_box.show()
@@ -241,7 +269,7 @@ class MemoryViewer(gtk.VBox):
 		except Exception, e:
 			# Disable follow mode if it has been enabled
 			self.follow_check.set_active(False)
-			self.system.log(e)
+			self.system.log(e, True)
 	
 	
 	def _on_edited(self, memory_viewer):
@@ -386,7 +414,10 @@ class MemoryTableViewer(gtk.Table):
 		"""
 		Find the height of the table row-viewing area
 		"""
-		return self.tree_view.get_bin_window().get_geometry()[3]
+		if self.tree_view.get_bin_window() is not None:
+			return self.tree_view.get_bin_window().get_geometry()[3]
+		else:
+			return 10
 	
 	
 	def _get_num_visible_rows(self):

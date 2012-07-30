@@ -18,6 +18,8 @@ class EmulatorBackEnd(BackEnd):
 		"""
 		BackEnd.__init__(self)
 		
+		self.name = "Emulator"
+		
 		# Start the emulator as a child-process
 		self.emulator = Popen(args,
 		                      bufsize = -1,   # Produce a fully-buffered set of pipes

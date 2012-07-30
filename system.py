@@ -33,7 +33,7 @@ class System(LoggerMixin,
              AnnotatorMixin,
              EvaluatorMixin):
 	
-	def __init__(self, back_end, name = None):
+	def __init__(self, back_end, name = "System"):
 		"""
 		A container and interface between all the pieces related to a system.
 		

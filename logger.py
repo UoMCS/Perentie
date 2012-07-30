@@ -16,23 +16,23 @@ class LoggerMixin(object):
 		self._on_log = []
 	
 	
-	def add_callback(self, callback, *args, **kwargs):
+	def on_log(self, callback, *args, **kwargs):
 		"""
 		Add a callback whenever a logging event occurs.
-		  callback(message, flag, *args, **kwargs)
+		  callback(exception, flag, *args, **kwargs)
 		"""
 		self._on_log.append((callback, args, kwargs))
 	
 	
-	def log(self, message, flag = False):
+	def log(self, exception, flag = False):
 		"""
-		Add a message to the log. If flag is true then the user will be shown the
+		Add a exception to the log. If flag is true then the user will be shown the
 		log automatically.
 		"""
 		
-		self.event_log.append((message, flag))
+		self.event_log.append((exception, flag))
 		
 		for callback, args, kwargs in self._on_log:
-			callback(message, flag, *args, **kwargs)
+			callback(exception, flag, *args, **kwargs)
 		
-		print repr(message)
+		print repr(exception)

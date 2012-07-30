@@ -90,7 +90,7 @@ class BackEnd(object):
 		"""
 		Create a protocol implementation.
 		"""
-		pass
+		self.name = None
 	
 	
 	def read(self, length):

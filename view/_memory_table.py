@@ -110,7 +110,7 @@ class MemoryWordTable(MemoryTable):
 				self.system.write_memory(self.memory, self.num_words, addr, [value])
 			except Exception, e:
 				# The user entered something invalid, ignore the edit
-				self.system.log(e)
+				self.system.log(e, True)
 		
 		else:
 			# Do nothing if editing the ASCII
@@ -184,7 +184,7 @@ class DisassemblyTable(MemoryTable):
 				self.system.write_memory(self.memory, length, addr, [value])
 			except Exception, e:
 				# The user entered something invalid, ignore the edit
-				self.system.log(e)
+				self.system.log(e, True)
 		
 		else:
 			try:
