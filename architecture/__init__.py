@@ -17,6 +17,7 @@ def get_architecture(cpu, cpu_subtype):
 	
 	return {
 		1: ARM,
+		# 2: MIPS, # Not implemented
 		3: STUMP,
 		4: MU0,
 	}[cpu]()

@@ -12,6 +12,8 @@ user may need to see.
 DeviceMixin: Provides clean, error-checked, memoised, accessor functions for the
 BackEnd.
 
+AssemblerLoaderMixin: Provides an interface for assembling/loading files.
+
 AnnotatorMixin: Provides annotation data for memory views.
 
 EvaluatorMixin: Allows arithmetic expressions to be evaluated in the context of

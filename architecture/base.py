@@ -23,8 +23,9 @@ class Architecture(object):
 		# considered to be the "default" unless otherwise stated.
 		self.register_banks = []
 		
-		# List of memories available to the system
+		# List of Memory objects available to the system
 		self.memories = []
 		
 		# List of peripherals supported by the system
+		# XXX: Not yet supported
 		self.peripherals = []
