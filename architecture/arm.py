@@ -32,7 +32,7 @@ class ARM(Architecture):
 
 		self.memories.append(memory)
 		
-		self._define_register_bank(memory, ["Current", "current"], 0)
+		self._define_register_bank(memory, ["Current", "current"], 0, True)
 		self._define_register_bank(memory, ["User", "System",
 		                                    "user", "system"], 32)
 		self._define_register_bank(memory, ["Supervisor",
@@ -45,9 +45,11 @@ class ARM(Architecture):
 		self._define_register_bank(memory, ["FIQ", "FIQ"], 192)
 	
 	
-	def _define_register_bank(self, memory, names, offset):
+	def _define_register_bank(self, memory, names, offset, pointers = False):
 		"""
-		Define a register-bank worth of registers
+		Define a register-bank worth of registers.
+		
+		If pointers is true, add pointers
 		"""
 		registers = []
 		
@@ -58,17 +60,17 @@ class ARM(Architecture):
 				 "r%d"%n],         # Named Rn for each n
 				32,                # 32-bits wide
 				offset + n,        # At address n in the register address space
-				Pointer([memory])) # May point into memory
+				Pointer([memory]) if pointers else None) # May point into memory
 			)
 		
 		# Define "special" registers R13-R15
 		for n, name in ((13, "SP"), (14, "LR"), (15, "PC")):
 			registers.append(Register(
-				["R%d"%n, "r%d"%n,
-				 name, name.lower()],    # Names
+				[name, name.lower(),
+				 "R%d"%n, "r%d"%n],    # Names
 				32,                      # 16-bits wide
 				offset + n,              # At address n in the register address space
-				Pointer([memory], name)) # Points into memory as the type it is
+				Pointer([memory], name) if pointers else None) # Points into memory as the type it is
 			)
 		
 		# Define the flag registers

@@ -800,8 +800,8 @@ class MemoryTableViewer(gtk.Table):
 		# Add data from memory to the list store
 		for row, (addr, length, data) in enumerate(memory_table_data):
 			# Format the start (and end address) of the line
-			formatted_addr = format_number(addr, self.memory.word_width_bits)
-			formatted_end  = format_number(addr + length, self.memory.word_width_bits)
+			formatted_addr = format_number(addr, self.memory.addr_width_bits)
+			formatted_end  = format_number(addr + length, self.memory.addr_width_bits)
 			
 			# The text in the address column (show the range if there is one)
 			if length > 1:

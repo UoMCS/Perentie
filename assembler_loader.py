@@ -63,6 +63,8 @@ class AssemblerLoaderMixin(object):
 		for line in data.strip().split("\n"):
 			addr, val = map(str.strip, line.split(":"))
 			
+			val = val.split(";")[0].strip()
+			
 			addr = int(addr.split()[-1], 16)
 			
 			if val != "":
