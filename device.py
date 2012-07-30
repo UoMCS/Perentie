@@ -30,6 +30,19 @@ class DeviceMixin(object):
 	NUM_NOPS = 100
 	
 	
+	# Status constants
+	STATUS_ERROR              = -1
+	STATUS_RESET              = 0x00
+	STATUS_BUSY               = 0x01
+	STATUS_STOPPED            = 0x40
+	STATUS_STOPPED_BREAKPOINT = 0x41
+	STATUS_STOPPED_WATCHPOINT = 0x42
+	STATUS_STOPPED_MEM_FAULT  = 0x43
+	STATUS_STOPPED_PROG_REQ   = 0x44
+	STATUS_RUNNING            = 0x80
+	STATUS_RUNNING_SWI        = 0x81
+	
+	
 	def __init__(self):
 		self.clear_cache()
 	
@@ -212,3 +225,29 @@ class DeviceMixin(object):
 			self.back_end.stop_execution()
 		except BackEndError, e:
 			self.log(e)
+	
+	
+	def pause_execution(self):
+		try:
+			self.back_end.pause_execution()
+		except BackEndError, e:
+			self.log(e)
+	
+	
+	def continue_execution(self):
+		try:
+			self.back_end.continue_execution()
+		except BackEndError, e:
+			self.log(e)
+	
+	
+	def get_status(self):
+		"""
+		Get the status of the board. Returns a tuple
+		(status, steps_remaining, steps_since_reset).
+		"""
+		try:
+			return self.back_end.get_status()
+		except BackEndError, e:
+			self.log(e)
+			return (DeviceMixin.STATUS_ERROR, -1, -1)

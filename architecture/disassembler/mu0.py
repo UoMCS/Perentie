@@ -4,7 +4,7 @@
 An MU0 disassembler
 """
 
-from disassembler import Disassembler
+from base import Disassembler
 
 
 class MU0Disassembler(Disassembler):

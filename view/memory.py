@@ -85,11 +85,11 @@ class MemoryViewer(gtk.VBox):
 		self.memory_tables = []
 		
 		# Add each disassembler supported by the memory
-		for disassembler in self.memory.disassemblers:
+		for (assembler, disassembler) in self.memory.assemblers:
 			self.memory_tables.append(("Disassembly (%s)"%disassembler.name,
 			                          DisassemblyTable(self.system,
 			                                           self.memory,
-			                                           disassembler)))
+			                                           assembler, disassembler)))
 		
 		# Names of element sizes which may be displayed
 		size_names = {}

@@ -9,8 +9,8 @@ from base import Architecture
 from register import RegisterBank, Register, Pointer, BitField
 from memory   import Memory
 
-import disassembler
 from disassembler.mu0 import MU0Disassembler
+from assembler.mu0    import MU0Assembler
 
 
 class MU0(Architecture):
@@ -31,7 +31,7 @@ class MU0(Architecture):
 			 "memory", "mem"],   # Names for the main/only memory
 			12,                  # 12-bit addresses
 			16,                  # 16-bit memory words
-			[MU0Disassembler()]) # Use the MU0 disassembler
+			[(MU0Assembler(), MU0Disassembler())]) # Use the MU0 (dis)assembler
 		
 		self.memories.append(memory)
 		

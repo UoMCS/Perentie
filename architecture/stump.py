@@ -10,6 +10,7 @@ from register import RegisterBank, Register, Pointer, BitField
 from memory   import Memory
 
 from disassembler.stump import STUMPDisassembler
+from assembler.stump    import STUMPAssembler
 
 
 class STUMP(Architecture):
@@ -30,7 +31,7 @@ class STUMP(Architecture):
 			 "memory", "mem"],     # Names for the main/only memory
 			16,                    # 16-bit address bus
 			16,                    # 16-bit memory words
-			[STUMPDisassembler()]) # Use the STUMP disassembler
+			[(STUMPAssembler(), STUMPDisassembler())]) # Use the STUMP (dis)assembler
 
 		self.memories.append(memory)
 		

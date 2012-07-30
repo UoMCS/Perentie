@@ -151,7 +151,7 @@ class MemoryWordTable(MemoryTable):
 
 class DisassemblyTable(MemoryTable):
 	
-	def __init__(self, system, memory, disassembler, align = True):
+	def __init__(self, system, memory, assembler, disassembler, align = True):
 		"""
 		A MemoryTable which simply fetches blocks of the given number of memory
 		words with no additional data.
@@ -164,6 +164,7 @@ class DisassemblyTable(MemoryTable):
 		"""
 		MemoryTable.__init__(self, system, memory, align)
 		
+		self.assembler    = assembler
 		self.disassembler = disassembler
 	
 	
@@ -172,11 +173,11 @@ class DisassemblyTable(MemoryTable):
 	
 	
 	def set_cell(self, addr, row, column, new_data):
+		# Re-run the disassembler up to the requested row to find the address of
+		# the row. (How wasteful!)
+		addr, length, _ = self.get_data(addr, row+1)[-1]
+		
 		if column == 0:
-			# Re-run the disassembler up to the requested row to find the address of
-			# the row. (How wasteful!)
-			addr, length, _ = self.get_data(addr, row+1)[-1]
-			
 			try:
 				# Try and write the new value
 				value = self.system.evaluate(new_data)
@@ -186,8 +187,14 @@ class DisassemblyTable(MemoryTable):
 				self.system.log(e)
 		
 		else:
-			# XXX: Add assembler...
-			self.system.log(Exception("Assembly Editing Not (Currently) Supported."))
+			try:
+				# Try and assemble the instruction
+				# XXX: TODO: Add symbol table
+				value = self.assembler.assemble_instruction(new_data, length, addr)
+				self.system.write_memory(self.memory, length, addr, [value])
+			except Exception, e:
+				# Some assembler error
+				self.system.log(e)
 	
 	
 	def get_data(self, addr, num_rows):

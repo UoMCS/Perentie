@@ -20,13 +20,18 @@ the system.
 
 from architecture import get_architecture
 
-from logger     import LoggerMixin
-from device     import DeviceMixin
-from annotator  import AnnotatorMixin
-from expression import EvaluatorMixin
+from logger           import LoggerMixin
+from device           import DeviceMixin
+from assembler_loader import AssemblerLoaderMixin
+from annotator        import AnnotatorMixin
+from expression       import EvaluatorMixin
 
 
-class System(LoggerMixin, DeviceMixin, AnnotatorMixin, EvaluatorMixin):
+class System(LoggerMixin,
+             DeviceMixin,
+             AssemblerLoaderMixin,
+             AnnotatorMixin,
+             EvaluatorMixin):
 	
 	def __init__(self, back_end, name = None):
 		"""
@@ -39,6 +44,7 @@ class System(LoggerMixin, DeviceMixin, AnnotatorMixin, EvaluatorMixin):
 		"""
 		LoggerMixin.__init__(self)
 		DeviceMixin.__init__(self)
+		AssemblerLoaderMixin.__init__(self)
 		AnnotatorMixin.__init__(self)
 		
 		self.back_end = back_end

@@ -4,7 +4,7 @@
 A STUMP disassembler
 """
 
-from disassembler import Disassembler
+from base import Disassembler
 
 
 def b2i(data):
