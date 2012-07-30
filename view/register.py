@@ -287,6 +287,15 @@ class RegisterBankViewer(gtk.VBox):
 			index  = self.bit_registers.index(register)
 			editor = self.bit_notebook.get_nth_page(index)
 			
+			# The label on the notebook
+			label = self.bit_notebook.get_tab_label(editor)
+			
+			# Set the label tooltip to the register's value
+			tt = "%s = %s"%(register.name,
+			                format_number(value, register.width_bits))
+			if label.get_tooltip_text() != tt:
+				label.set_tooltip_text(tt)
+			
 			# Pass on the request to the bit-field editor
 			editor.set_value(value)
 	
