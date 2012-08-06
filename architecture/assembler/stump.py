@@ -30,5 +30,9 @@ class STUMPAssembler(Assembler):
 			raise Exception("Assembly Failed:\n%s"%errors)
 		
 		# Get the output filename
+		# Chop off the .s (as sasm does)
 		filename, ext = os.path.splitext(input_filename)
+		if ext != ".s":
+			filename += ext
+		
 		return "%s.lst"%filename

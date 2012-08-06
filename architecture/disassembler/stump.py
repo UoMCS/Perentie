@@ -144,7 +144,11 @@ class STUMPDisassembler(Disassembler):
 		for instr_num in range(num_instrs):
 			instr = memory_read(start_addr, 1)[0]
 			
-			disassembly.append((start_addr, 16, instr, self._disassemble_instr(instr)))
+			try:
+				disassembly.append((start_addr, 16, instr, self._disassemble_instr(instr)))
+			except Exception, e:
+				# Some decoding lookup failed
+				disassembly.append((start_addr, 16, instr, "???"))
 			
 			# Next instruction
 			start_addr += 1

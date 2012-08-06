@@ -88,5 +88,5 @@ class RegisterAnnotation(Annotation):
 	def get_tooltip(self):
 		return "%s.%s == <tt>%s</tt>"%(self.register_bank.name,
 		                      self.register.name,
-		                      format_number(self.addr, self.memory.word_width_bits))
+		                      format_number(self.addr, self.memory.addr_width_bits))
 
