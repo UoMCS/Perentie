@@ -4,6 +4,8 @@
 An event logger for mixing into the system.
 """
 
+import traceback
+
 class LoggerMixin(object):
 	"""
 	Log of system events/output
@@ -30,9 +32,9 @@ class LoggerMixin(object):
 		log automatically.
 		"""
 		
-		self.event_log.append((exception, flag))
+		trace = traceback.format_exc()
+		
+		self.event_log.append((exception, trace, flag))
 		
 		for callback, args, kwargs in self._on_log:
-			callback(exception, flag, *args, **kwargs)
-		
-		print repr(exception)
+			callback(exception, trace, flag, *args, **kwargs)
