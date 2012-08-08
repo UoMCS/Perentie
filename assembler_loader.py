@@ -58,23 +58,45 @@ class AssemblerLoaderMixin(object):
 	
 	def _load_lst(self, memory, data):
 		"""
-		Load .lst format data into the given memory.
+		Load .lst format data into the given memory. Returns a generator that yields
+		tuples (amount_read, total) indicating progress.
 		"""
-		for line in data.strip().split("\n"):
-			addr, val = map(str.strip, line.split(":"))
+		try:
+			# Parse the input file
+			to_write = {}
+			for line in data.strip().split("\n"):
+				addr, val = map(str.strip, line.split(":"))
+				
+				val = val.split(";")[0].strip()
+				
+				addr = int(addr.split()[-1], 16)
+				
+				if val != "":
+					# XXX: Assumes that each entry has exactly one word
+					to_write[addr] = [int(val, 16)]
 			
-			val = val.split(";")[0].strip()
+			# Write the data to the memory
+			length = len(to_write)
+			for num, (addr, values) in enumerate(to_write.iteritems()):
+				self.write_memory(memory, 1, addr, values)
+				yield (num, length)
 			
-			addr = int(addr.split()[-1], 16)
-			
-			if val != "":
-				# XXX: Assumes that each entry has exactly one word
-				self.write_memory(memory, 1, addr, [int(val, 16)])
+		except Exception, e:
+			self.log(e, flag = True)
 	
 	
 	def load_image(self):
 		"""
 		Loads the current image file.
+		"""
+		for _ in self.load_image_():
+			pass
+	
+	
+	def load_image_(self):
+		"""
+		Loads the current image file. Returns a generator that yields tuples
+		(amount_read, total) indicating progress or yields None when done.
 		"""
 		# XXX: TODO: Allow a choice of memories. For now chose the default.
 		memory = self.architecture.memories[0]
@@ -91,7 +113,7 @@ class AssemblerLoaderMixin(object):
 			loader = loaders[ext]
 			
 			# Load the image
-			loader(memory, open(self.image_filename, "r").read())
+			return loader(memory, open(self.image_filename, "r").read())
 			
 		except Exception, e:
 			self.log(e, flag = True)

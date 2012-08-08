@@ -18,7 +18,7 @@ from view.log         import LogViewer
 class Main(gtk.Window):
 	
 	# Number of ms between screen refreshes
-	REFRESH_INTERVAL = 100
+	REFRESH_INTERVAL = 300
 	
 	def __init__(self, system):
 		"""
@@ -126,6 +126,9 @@ class Main(gtk.Window):
 
 
 if __name__=="__main__":
+	# Enable GTK multi-threading support
+	gtk.gdk.threads_init()
+	
 	from optparse import OptionParser, OptionGroup
 	parser = OptionParser()
 	
@@ -161,5 +164,4 @@ if __name__=="__main__":
 	main_window.show_all()
 	
 	# GTK Mainloop
-	glib.threads_init()
 	gtk.main()

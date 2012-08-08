@@ -4,6 +4,8 @@
 An event logger for mixing into the system.
 """
 
+from threading import Lock
+
 import traceback
 
 class LoggerMixin(object):
@@ -12,10 +14,14 @@ class LoggerMixin(object):
 	"""
 	
 	def __init__(self):
+		self.log_lock = Lock()
+		
 		self.event_log = []
 		
 		# List of callbacks to call when logging occurs
 		self._on_log = []
+		
+		
 	
 	
 	def on_log(self, callback, *args, **kwargs):
@@ -23,7 +29,8 @@ class LoggerMixin(object):
 		Add a callback whenever a logging event occurs.
 		  callback(exception, flag, *args, **kwargs)
 		"""
-		self._on_log.append((callback, args, kwargs))
+		with self.log_lock:
+			self._on_log.append((callback, args, kwargs))
 	
 	
 	def log(self, exception, flag = False):
@@ -32,9 +39,14 @@ class LoggerMixin(object):
 		log automatically.
 		"""
 		
-		trace = traceback.format_exc()
+		with self.log_lock:
+			trace = traceback.format_exc()
+			
+			print trace
+			
+			self.event_log.append((exception, trace, flag))
+			
+			callbacks = self._on_log[:]
 		
-		self.event_log.append((exception, trace, flag))
-		
-		for callback, args, kwargs in self._on_log:
+		for callback, args, kwargs in callbacks:
 			callback(exception, trace, flag, *args, **kwargs)

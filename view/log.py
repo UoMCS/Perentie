@@ -62,7 +62,7 @@ class LogViewer(gtk.ScrolledWindow):
 			it = self.list_store.append((str(exception),   # Simple description
 			                             800,              # Initially bold
 			                             colour,           # Colour
-			                             traceback)) # Full description
+			                             glib.markup_escape_text(traceback))) # Full description
 			
 			# Scroll into view
 			self.tree_view.scroll_to_cell(len(self.list_store) - 1)

@@ -85,6 +85,9 @@ class BackEnd(object):
 	STATUS_RUNNING            = 0x80
 	STATUS_RUNNING_SWI        = 0x81
 	
+	# Length of a peripheral download packet
+	PACKET_LENGTH = 256
+	
 	
 	def __init__(self):
 		"""
@@ -127,6 +130,13 @@ class BackEnd(object):
 			raise ReadError("Got %d bytes, expected %d"%(len(data), length))
 		
 		return data
+	
+	
+	def ignore(self, length):
+		"""
+		Ignores up-to a certain number if incomming bytes.
+		"""
+		self.read(length)
 	
 	
 	def nop(self):
@@ -216,6 +226,7 @@ class BackEnd(object):
 		"""
 		Reset the device.
 		"""
+		
 		self.write(byte(BackEnd.RESET))
 		self.flush()
 	
@@ -583,6 +594,53 @@ class BackEnd(object):
 		self.flush()
 		
 		return self.read_exactly(length * element_size)
+	
+	
+	def peripheral_download(self, num, data):
+		"""
+		Download some data into a peripheral (aka feature).
+		"""
+		for _ in self.peripheral_download_(num, data):
+			pass
+	
+	def peripheral_download_(self, num, data):
+		"""
+		Download some data into a peripheral (aka feature).
+		Yields the amount of data sent every packet.
+		"""
+		assert(num >= 0)
+		assert(len(data) > 0)
+		
+		# Send the header
+		self.write(byte(BackEnd.PERIPH_DOWNLOAD_HEADER))
+		self.write(byte(num))
+		self.write(word(len(data)))
+		self.flush()
+		
+		# Get the ack
+		resp = self.read(1)
+		if resp != "A":
+			raise BackEndError("Expected 'A', got %s"%(repr(resp)))
+		
+		# Send the data, packet by packet
+		sent = 0
+		while data:
+			packet = data[:BackEnd.PACKET_LENGTH]
+			data   = data[BackEnd.PACKET_LENGTH:]
+			length = len(packet)
+			sent  += length
+			
+			self.write(byte(BackEnd.PERIPH_DOWNLOAD_PACKET))
+			self.write(byte(num))
+			self.write(byte(length))
+			self.write(packet)
+			self.flush()
+			
+			resp = self.read(1)
+			if resp != "A":
+				raise BackEndError("Expected 'A', got %s"%(repr(resp)))
+			
+			yield sent
 	
 	
 	def run(self, max_steps = 0,

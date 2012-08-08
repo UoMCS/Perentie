@@ -5,8 +5,11 @@ A GTK+ widget for viewing a system's registers.
 """
 
 
+from threading import Lock
+
 import gtk, gobject
 
+from background import RunInBackground
 from format import *
 
 
@@ -63,14 +66,18 @@ class RegisterViewer(gtk.Notebook):
 			register_bank_viewer.refresh()
 	
 	
+	@RunInBackground()
 	def _on_register_edited(self, bank_viewer, register, new_value, register_bank):
 		"""
 		Call-back when a a register in any register bank has been edited.  Write
 		back to the device and re-broadcast the signal including the RegisterBank.
 		"""
 		self.system.write_register(register, new_value)
-		self.refresh()
 		
+		# Return to GTK thread
+		yield
+		
+		self.refresh()
 		self.emit("edited", register_bank, register, new_value)
 	
 	
@@ -223,12 +230,15 @@ class RegisterBankViewer(gtk.VBox):
 		self.refresh()
 	
 	
+	@RunInBackground(start_in_gtk = True)
 	def _on_int_register_edited(self, cell_renderer, path, new_value):
 		"""
 		Call-back when an integer register is edited.
 		"""
 		# Emit the edited event with the register and new value as arguments
-		self.editing_row = None
+		
+		# Run in background
+		success = False
 		try:
 			# XXX: GTK states path may be an integer or a tuple with an int in. I
 			# don't know how to force it to be one of these but it happens to be a
@@ -236,12 +246,19 @@ class RegisterBankViewer(gtk.VBox):
 			register = self.int_registers[int(path)]
 			value    = self.system.evaluate(new_value)
 			
-			# Emit the signal
-			self.emit("edited", register, value)
+			success = True
 		except Exception, e:
 			# The user entered a bad value or a comm error occurred during evaluation,
 			# ignore it
 			self.system.log(e, True)
+		
+			
+		# Emit the signal (in the GKT thread)
+		yield
+		self.editing_row = None
+		if success:
+			self.emit("edited", register, value)
+		
 	
 	
 	def _on_bit_register_edited(self, bit_field_viewer, new_value):
@@ -320,12 +337,19 @@ class RegisterBankViewer(gtk.VBox):
 			return editor.get_value()
 	
 	
+	@RunInBackground()
 	def refresh(self):
 		"""
 		Update all registers in this bank.
 		"""
+		value_assignments = {}
 		for register in self.register_bank.registers:
-			value = self.system.read_register(register)
+			value_assignments[register] = self.system.read_register(register)
+		
+		# Update the widget in the GTK thread
+		yield
+		
+		for register, value in value_assignments.iteritems():
 			self.set_register(register, value)
 
 
@@ -409,6 +433,9 @@ class BitFieldViewer(gtk.HBox):
 		                   decoded_field,
 		                   self.bit_field.fields):
 			
+			# Block the change event
+			widget.handler_block_by_func(self._on_change)
+			
 			if field_type == self.bit_field.BIT:
 				widget.set_active(field_value)
 			
@@ -421,32 +448,55 @@ class BitFieldViewer(gtk.HBox):
 					widget.set_active(-1)
 				else:
 					widget.set_active(field[2].values().index(field_value))
+			
+			# Unblock the change event
+			widget.handler_unblock_by_func(self._on_change)
 		
 		# Store the full value of the field
 		self.value = decoded_field[-1]
 	
 	
-	def encode_from_widgets(self):
+	def get_widget_values(self):
 		"""
-		Return an integer containing the bit-field.
+		Extract the relevant value of each widget, in order.
 		"""
+		# Get widget contents while in the GTK thread
+		widget_values = []
+		for (widget,
+		     field_type) in zip(self.field_widgets,
+		                        self.bit_field.field_types):
+			
+			if field_type == self.bit_field.BIT:
+				widget_values.append(widget.get_active())
+			elif field_type in (self.bit_field.INT, self.bit_field.UINT):
+				widget_values.append(widget.get_text())
+			elif field_type == self.bit_field.ENUM:
+				widget_values.append(widget.get_active())
 		
+		return widget_values
+	
+	
+	def encode_from_widgets(self, widget_values, previous_value):
+		"""
+		Take the value of each widget and the previous value and return an integer
+		containing the bit-field.
+		"""
 		field_values = []
 		# Add the value for each widget/field
-		for (widget,
+		for (widget_value,
 		     field_type,
 		     field_wdith,
-		     field) in zip(self.field_widgets,
+		     field) in zip(widget_values,
 		                   self.bit_field.field_types,
 		                   self.bit_field.field_widths,
 		                   self.bit_field.fields):
 			
 			if field_type == self.bit_field.BIT:
-				field_values.append(widget.get_active())
+				field_values.append(widget_value)
 			
 			elif field_type in (self.bit_field.INT, self.bit_field.UINT):
 				try:
-					value = self.system.evaluate(widget.get_text())
+					value = self.system.evaluate(widget_value)
 				except Exception, e:
 					# The user entered a bad value or a comm error occurred during evaluation,
 					# ignore it
@@ -455,23 +505,34 @@ class BitFieldViewer(gtk.HBox):
 				field_values.append(value)
 			
 			elif field_type == self.bit_field.ENUM:
-				index = widget.get_active()
-				if index == -1:
+				if widget_value == -1:
 					field_values.append(None)
 				else:
 					field_values.append(field[2].values()[index])
 		
 		# Add the previous bit-field value
-		field_values.append(self.value)
+		field_values.append(previous_value)
 		
 		return self.bit_field.encode(field_values)
 	
 	
+	@RunInBackground(start_in_gtk = True)
 	def _on_change(self, widget, *args):
 		"""
 		Call-back when a field has been changed
 		"""
-		value = self.encode_from_widgets()
+		# Get widget values while in GTK thread
+		widget_values = self.get_widget_values()
+		previous_value = self.value
+		
+		# Run in background (as we may need to evaluate something)
+		yield
+		value = self.encode_from_widgets(widget_values, previous_value)
+		
+		# Emit events from GTK thread
+		yield
+		# Reloading the integer value replaces all widgets with their absolute
+		# values (i.e. literal values not expressions).
 		self.set_value(value)
 		self.emit("edited", value)
 	
@@ -487,4 +548,4 @@ class BitFieldViewer(gtk.HBox):
 		"""
 		Get the value of a bit-field in the display
 		"""
-		return self.encode_from_widgets()
+		return self.value

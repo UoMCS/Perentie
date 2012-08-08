@@ -9,6 +9,9 @@ from subprocess import Popen, PIPE
 
 from base import BackEnd
 
+# XXX
+from time import sleep
+
 class EmulatorBackEnd(BackEnd):
 	
 	def __init__(self, args):

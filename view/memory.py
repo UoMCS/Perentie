@@ -6,12 +6,14 @@ A GTK+ widget for viewing a system's memory.
 """
 
 
-from math import ceil
+from math      import ceil
 
 import gtk, gobject, glib
 
 from pixmaps import *
 from format  import *
+
+from background import RunInBackground
 
 from _memory_table import MemoryWordTable, DisassemblyTable
 from _annotation   import RegisterAnnotation
@@ -279,14 +281,22 @@ class MemoryViewer(gtk.VBox):
 		self.emit("edited")
 	
 	
+	@RunInBackground(start_in_gtk = True)
 	def refresh(self):
 		"""
 		Update the memory displayed.
 		"""
-		# Follow the address if needed
-		if self.follow_check.get_active():
+		# Get the checkbox in the gtk thread
+		follow = self.follow_check.get_active()
+		
+		
+		yield
+		# Evaluate the address if we're following it in a background thread
+		if follow:
 			self.evaluate_addr_expression()
 		
+		# Return to the GTK thread to update the view
+		yield
 		self.memory_table_viewer.refresh()
 
 
@@ -704,12 +714,11 @@ class MemoryTableViewer(gtk.Table):
 		self.refresh()
 	
 	
+	@RunInBackground()
 	def _on_edited(self, renderer, path, new_data, column):
 		"""
 		Called when a cell's value has been changed.
 		"""
-		self.editing_row = None
-		
 		# XXX: GTK states path may be an integer or a tuple with an int in. I don't
 		# know how to force it to be one of these but it happens to be a string
 		# here...
@@ -717,6 +726,11 @@ class MemoryTableViewer(gtk.Table):
 		
 		# Write back the change
 		self.memory_table.set_cell(self.get_addr(), row, column, new_data)
+		
+		# Return to GTK thread
+		yield
+		
+		self.editing_row = None
 		
 		self.emit("edited")
 		
@@ -750,7 +764,7 @@ class MemoryTableViewer(gtk.Table):
 		# Get the end address of the location to annotate and also calculate the
 		# version as if it had been aliased
 		addr_end        = addr_start + length
-		addr_end_masked = addr_end & ((1<<self.memory.word_width_bits) - 1)
+		addr_end_masked = addr_end & ((1<<self.memory.addr_width_bits) - 1)
 		
 		# The address wraps around if when masked it is different
 		addr_wraps = addr_end != addr_end_masked
@@ -783,6 +797,7 @@ class MemoryTableViewer(gtk.Table):
 			return (POINTER_DEFAULT, "#000000", "")
 		
 	
+	@RunInBackground()
 	def refresh(self):
 		# Do nothing if no memory table has been set
 		if self.memory_table is None:
@@ -793,6 +808,9 @@ class MemoryTableViewer(gtk.Table):
 		# Fetch data from memory
 		num_rows = len(self.list_store)
 		memory_table_data = self.memory_table.get_data(self.get_addr(), num_rows)
+		
+		# Run remainder in GTK thread
+		yield
 		
 		# Upadte address step size
 		self.addr_step = memory_table_data[0][1]

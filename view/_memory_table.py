@@ -194,7 +194,7 @@ class DisassemblyTable(MemoryTable):
 				self.system.write_memory(self.memory, length, addr, [value])
 			except Exception, e:
 				# Some assembler error
-				self.system.log(e)
+				self.system.log(e, True)
 	
 	
 	def get_data(self, addr, num_rows):

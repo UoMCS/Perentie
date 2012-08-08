@@ -7,6 +7,8 @@ A GTK+ toolbar for controling a system.
 
 import gtk
 
+from background import RunInBackground
+
 
 class ControlBar(gtk.Toolbar):
 	
@@ -173,8 +175,13 @@ class ControlBar(gtk.Toolbar):
 		sep.show()
 	
 	
+	@RunInBackground()
 	def _on_reset_clicked(self, btn):
 		self.system.reset()
+		
+		# Return to GTK thread
+		yield
+		
 		self.refresh()
 	
 	
@@ -213,10 +220,6 @@ class ControlBar(gtk.Toolbar):
 		selection.destroy()
 	
 	
-	def _on_source_selected(self, dialog, response_id):
-		print dialog.get_filename()
-	
-	
 	def _on_load_clicked(self, btn):
 		"""
 		When the load button is clicked, load if a file is already set,
@@ -228,14 +231,22 @@ class ControlBar(gtk.Toolbar):
 			self._on_reload_clicked(btn)
 	
 	
+	@RunInBackground()
 	def _on_reload_clicked(self, btn):
 		"""
 		Reload the current image file
 		"""
+		# Load the memory in a background thread
 		if self.system.get_image_filename() is None:
 			return
 		
-		self.system.load_image()
+		for progress in self.system.load_image_():
+			from time import sleep
+			yield progress
+		
+		# Return to the GTK thread
+		yield
+		
 		self.refresh()
 	
 	
@@ -253,48 +264,80 @@ class ControlBar(gtk.Toolbar):
 		selection.destroy()
 	
 	
+	@RunInBackground()
 	def _on_run_clicked(self, btn):
 		"""
 		Run button clicked: Start executing indefinately
 		"""
 		self.system.run()
+		
+		# Return to GTK thread
+		yield
+		
 		self.refresh()
 	
 	
+	@RunInBackground()
 	def _on_stop_clicked(self, btn):
 		"""
 		Stop button clicked: Stop the device
 		"""
 		self.system.stop()
+		
+		# Return to GTK thread
+		yield
+		
 		self.refresh()
 	
 	
+	@RunInBackground()
 	def _on_step_clicked(self, btn):
 		"""
 		Step button clicked: Execute a single step.
 		"""
 		self.system.run(1, break_on_first_instruction = False)
+		
+		# Return to GTK thread
+		yield
+		
 		self.refresh()
 	
 	
+	@RunInBackground(start_in_gtk = True)
 	def _on_multi_step_clicked(self, btn):
 		"""
 		Multi-Step button clicked: Execute a number of steps in the spin box
 		"""
 		self.multi_step_spin.activate()
+		
+		# Run in background
+		yield
+		
 		self.system.run(int(self.multi_step_spin.get_value_as_int()),
 		                break_on_first_instruction = True)
+		
+		# Return to GTK thread
+		yield
+		
 		self.refresh()
 	
 	
+	@RunInBackground()
 	def _on_pause_clicked(self, btn):
 		"""
 		Pause/unpause execution
 		"""
-		if btn.get_active():
+		status, steps_remaining, steps_since_reset = self.system.get_status()
+		running = status in (self.system.STATUS_RUNNING,
+		                     self.system.STATUS_RUNNING_SWI)
+		
+		if running:
 			self.system.pause_execution()
 		else:
 			self.system.continue_execution()
+		
+		# Return to GTK thread
+		yield
 		
 		self.refresh()
 	
@@ -304,6 +347,7 @@ class ControlBar(gtk.Toolbar):
 		pass
 	
 	
+	@RunInBackground()
 	def _refresh_pause_btn(self):
 		"""
 		Update the state/tooltip of the pause button
@@ -319,8 +363,13 @@ class ControlBar(gtk.Toolbar):
 		# If we're stopped and there are steps remaining, we're paused
 		paused = stopped and steps_remaining > 0
 		
+		# Run in GTK thread
+		yield
+		
 		# Update the pause button
+		self.pause_btn.handler_block_by_func(self._on_pause_clicked)
 		self.pause_btn.set_active(paused)
+		self.pause_btn.handler_unblock_by_func(self._on_pause_clicked)
 	
 	
 	def refresh(self):
