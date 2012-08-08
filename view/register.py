@@ -148,7 +148,7 @@ class RegisterBankViewer(gtk.VBox):
 		Add the integer register viewer
 		"""
 		# The list model
-		self.register_list_model = gtk.ListStore(str, str)
+		self.register_list_model = gtk.ListStore(str, str, str)
 		
 		# A tree view is used to display the integer registers
 		self.register_list = gtk.TreeView(self.register_list_model)
@@ -162,14 +162,15 @@ class RegisterBankViewer(gtk.VBox):
 		
 		# Define the (column name, editable) in the tree view
 		for column_num, (name, editable) in enumerate((("Register", False),
-		                                               ("Value", True))):
+		                                               ("Value", True),
+		                                               ("ASCII", False))):
 			# Create a column with the appropriate name
 			column = gtk.TreeViewColumn(name)
 			
 			# Register names and values are shown as (possibly editable) strings
 			cell_renderer = gtk.CellRendererText()
 			cell_renderer.set_property("editable", editable)
-			if editable:
+			if column_num > 0:
 				cell_renderer.set_property("font", "monospace")
 			
 			# Set up renderer's editing events
@@ -186,7 +187,7 @@ class RegisterBankViewer(gtk.VBox):
 		
 		# Add the registers to the list (initially empty values)
 		for register in self.int_registers:
-			self.register_list_model.append((register.name, ""))
+			self.register_list_model.append((register.name, "", ""))
 		
 		self.pack_start(self.register_list, expand = True, fill = True)
 		self.register_list.show()
@@ -290,6 +291,7 @@ class RegisterBankViewer(gtk.VBox):
 		if register in self.int_registers:
 			# Format the value for display
 			formatted = format_number(value, register.width_bits)
+			ascii     = format_ascii(value, register.width_bits)
 			
 			# Get the row-number
 			row = self.int_registers.index(register)
@@ -301,6 +303,7 @@ class RegisterBankViewer(gtk.VBox):
 			# Update the value in the register list
 			it = self.register_list_model.get_iter(row)
 			self.register_list_model.set(it, 1, formatted)
+			self.register_list_model.set(it, 2, ascii)
 		
 		elif register in self.bit_registers:
 			# Find the bit field editor
