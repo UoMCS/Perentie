@@ -318,7 +318,8 @@ class MemoryTableViewer(gtk.Table):
 	COLOUR_COLUMN  = 1 # The row's foreground colour
 	TOOLTIP_COLUMN = 2 # The row's tool-tip
 	ADDR_COLUMN    = 3 # The address of the row
-	DATA_COLUMN    = 4 # The first column containing data from the memory table
+	LENGTH_COLUMN  = 4 # The length of the row
+	DATA_COLUMN    = 5 # The first column containing data from the memory table
 	
 	
 	# Max scroll speed (scroll 2**MAX_SCROLL_SPEED every 100ms)
@@ -364,7 +365,7 @@ class MemoryTableViewer(gtk.Table):
 		# The TreeModel into which data will be inserted for display by the
 		# treeview. Initially contains a single empty row which is used for
 		# measuring the height of a row in the table.
-		self.list_store = gtk.ListStore(gtk.gdk.Pixbuf, str, str, str)
+		self.list_store = gtk.ListStore(gtk.gdk.Pixbuf, str, str, str, int)
 		self._add_empty_row()
 		
 		# The treeview and model used to display memory elements. The size request
@@ -404,7 +405,7 @@ class MemoryTableViewer(gtk.Table):
 		Adds an empty row to the list store.
 		"""
 		cols = [""] * (self.list_store.get_n_columns() - self.DATA_COLUMN)
-		self.list_store.append([POINTER_DEFAULT, "#000000", "Loading...", ""] + cols)
+		self.list_store.append([POINTER_DEFAULT, "#000000", "Loading...", "", 0] + cols)
 	
 	
 	def _get_row_height(self):
@@ -662,6 +663,7 @@ class MemoryTableViewer(gtk.Table):
 			str,                             # Colour
 			str,                             # Toolip-text
 			str,                             # Address
+			int,                             # Length
 			] + ([str] * len(columns)))) # Data from the memory table (as strings)
 		
 		# Ensure there is at least one row (for display calculations)
@@ -800,8 +802,8 @@ class MemoryTableViewer(gtk.Table):
 	
 	@RunInBackground()
 	def refresh(self):
-		# Do nothing if no memory table has been set
-		if self.memory_table is None:
+		# Do nothing if no memory table/list store has been set
+		if self.memory_table is None or self.list_store is None:
 			return
 		
 		self._refresh_annotation_data()
@@ -816,29 +818,32 @@ class MemoryTableViewer(gtk.Table):
 		# Upadte address step size
 		self.addr_step = memory_table_data[0][1]
 		
-		# Add data from memory to the list store
-		for row, (addr, length, data) in enumerate(memory_table_data):
-			# Format the start (and end address) of the line
-			formatted_addr = format_number(addr, self.memory.addr_width_bits)
-			formatted_end  = format_number(addr + length, self.memory.addr_width_bits)
+		# Add data from memory to the list store (using zip with range of
+		# list_store's length inorder to ensure that we only copy the shorter of the
+		# two's lengths)
+		for row, (addr, length, data) in zip(range(len(self.list_store)), memory_table_data):
+			# Format the address of the line
+			addr_col = format_number(addr, self.memory.addr_width_bits)
+			addr_end = format_number(addr+length, self.memory.addr_width_bits)
 			
-			# The text in the address column (show the range if there is one)
+			# Get a fully-specified memory range
 			if length > 1:
-				addr_col = "%s:%s"%(formatted_addr, formatted_end)
+				addr_full = "%s:%s"%(addr_col, addr_end)
 			else:
-				addr_col = formatted_addr
+				addr_full = addr_col
 			
 			# Do not update the row if it is being edited unless its address has
 			# changed
 			old_addr_col = self.list_store[row][MemoryTableViewer.ADDR_COLUMN]
-			if self.editing_row == row and addr_col == old_addr_col:
+			old_length   = self.list_store[row][MemoryTableViewer.LENGTH_COLUMN]
+			if self.editing_row == row and addr_col == old_addr_col and length == old_length:
 				continue
 			
 			icon, colour, annotation_tooltips = self.get_annotation(addr, length)
 			
 			tooltip = "<b>%s<tt>[%s]</tt></b> — %d Word%s (%d × %d = %d Bits)\n%s"%(
 			                                        self.memory.name,
-			                                        addr_col,
+			                                        addr_full,
 			                                        length,
 			                                        "" if length == 1 else "s",
 			                                        length,
@@ -851,5 +856,6 @@ class MemoryTableViewer(gtk.Table):
 			self.list_store[row][MemoryTableViewer.COLOUR_COLUMN]  = colour
 			self.list_store[row][MemoryTableViewer.TOOLTIP_COLUMN] = tooltip.strip()
 			self.list_store[row][MemoryTableViewer.ADDR_COLUMN]    = addr_col
+			self.list_store[row][MemoryTableViewer.LENGTH_COLUMN]  = length
 			for num, datum in enumerate(data):
 				self.list_store[row][MemoryTableViewer.DATA_COLUMN + num] = datum

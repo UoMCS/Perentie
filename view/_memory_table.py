@@ -96,7 +96,12 @@ class MemoryWordTable(MemoryTable):
 	
 	
 	def get_columns(self):
-		return [("Data", True)]*self.num_elems + [("ASCII", False)]
+		# If just one column, just call it 'Data' to reduce confusion.
+		if self.num_elems == 1:
+			data_columns = [("Data", True)]
+		else:
+			data_columns = [("+%d"%(self.num_words*elem), True) for elem in range(self.num_elems)]
+		return data_columns + [("ASCII", False)]
 	
 	
 	def set_cell(self, addr, row, column, new_data):
