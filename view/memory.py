@@ -653,7 +653,7 @@ class MemoryTableViewer(gtk.Table):
 		self.memory_table = memory_table
 		
 		# Get the columns provided by the memory table
-		column_names = self.memory_table.get_columns()
+		columns = self.memory_table.get_columns()
 		
 		# Create a model containing columns for the icon, address, row-colour and
 		# each of the columns in this memory_table
@@ -662,19 +662,19 @@ class MemoryTableViewer(gtk.Table):
 			str,                             # Colour
 			str,                             # Toolip-text
 			str,                             # Address
-			] + ([str] * len(column_names)))) # Data from the memory table (as strings)
+			] + ([str] * len(columns)))) # Data from the memory table (as strings)
 		
 		# Ensure there is at least one row (for display calculations)
 		self._add_empty_row()
 		
 		# Create columns for each data table entry
-		for num, column_name in enumerate(column_names):
+		for num, (column_name, editable) in enumerate(columns):
 			# Create a column with the given name
 			col = gtk.TreeViewColumn(column_name)
 			
 			# Add an editable text renderer
 			renderer = gtk.CellRendererText()
-			renderer.set_property("editable", True)
+			renderer.set_property("editable", editable)
 			renderer.set_property("font", "monospace")
 			col.pack_start(renderer, expand = True)
 			

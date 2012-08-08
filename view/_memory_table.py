@@ -40,7 +40,7 @@ class MemoryTable(object):
 	
 	def get_columns(self):
 		"""
-		Return a list of extra columns this table has
+		Return a list of extra columns this table has as (title, editable)
 		"""
 		raise NotImplementedError()
 	
@@ -96,7 +96,7 @@ class MemoryWordTable(MemoryTable):
 	
 	
 	def get_columns(self):
-		return ["Data"]*self.num_elems + ["ASCII"]
+		return [("Data", True)]*self.num_elems + [("ASCII", False)]
 	
 	
 	def set_cell(self, addr, row, column, new_data):
@@ -169,7 +169,7 @@ class DisassemblyTable(MemoryTable):
 	
 	
 	def get_columns(self):
-		return ["Instruction", "Disassembly (%s)"%self.disassembler.name]
+		return [("Instruction", True), ("Disassembly (%s)"%self.disassembler.name, True)]
 	
 	
 	def set_cell(self, addr, row, column, new_data):
