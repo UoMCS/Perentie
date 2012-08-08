@@ -7,6 +7,7 @@ A GTK+ widget for viewing a system's memory.
 
 
 from math      import ceil
+from threading import Lock
 
 import gtk, gobject, glib
 
@@ -244,6 +245,8 @@ class MemoryViewer(gtk.VBox):
 		When follow mode is toggled, refresh the display incase it now needs to jump
 		to the followed value
 		"""
+		if follow_check.get_active():
+			self.addr_expression = self.addr_box.get_text()
 		self.refresh()
 	
 	
@@ -259,19 +262,6 @@ class MemoryViewer(gtk.VBox):
 	
 	def _on_scroll(self, memory_viewer):
 		self.follow_check.set_active(False)
-	
-	
-	def evaluate_addr_expression(self):
-		"""
-		Evaluate the saved addr_expression and set the address accordingly.
-		"""
-		try:
-			addr = self.system.evaluate(self.addr_expression)
-			self.memory_table_viewer.set_addr(addr)
-		except Exception, e:
-			# Disable follow mode if it has been enabled
-			self.follow_check.set_active(False)
-			self.system.log(e, True)
 	
 	
 	def _on_edited(self, memory_viewer):
@@ -291,12 +281,23 @@ class MemoryViewer(gtk.VBox):
 		
 		
 		yield
-		# Evaluate the address if we're following it in a background thread
+		# Evaluate the address field if we're following it in a background thread
+		addr = None
 		if follow:
-			self.evaluate_addr_expression()
+			try:
+				addr = self.system.evaluate(self.addr_expression)
+			except Exception, e:
+				# Disable follow mode if it has been enabled
+				self.follow_check.set_active(False)
+				self.system.log(e, True)
 		
 		# Return to the GTK thread to update the view
 		yield
+		
+		# Update the address
+		if addr is not None:
+			self.memory_table_viewer.set_addr(addr)
+		
 		self.memory_table_viewer.refresh()
 
 

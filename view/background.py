@@ -1,9 +1,30 @@
 #!/usr/bin/env python
 
 """
-Decorator which allows slow functions to run in a background thread until
+Decorator which allows slow functions to run partially a background thread until
 they're done and then get reinserted into the GTK main thread to make GUI
 modifications.
+
+This decorator can be applied to non-value-returning methods (and functions) to
+trivially run parts of the function in another (background) thread and later
+return to the GTK thread to update the GUI with the results of the background
+task. If the function is called repeatedly, previous calls are allowed to finish
+before the next one starts so no considerations for rentrancy need be made. To
+prevent a backlog of function calls building up, the system can discard old
+calls once a certain number of outstanding calls have built up.
+
+Uncaught exceptions arising within a function call are displayed on stderr.
+
+To cope with the fact that the main-loop may be killed while there are still
+idle events waiting to occur, this system automatically kills all function calls
+waiting to execute in the main loop when the main-loop is exited by injecting a
+MainloopTerminated exception into them.
+
+If a function continues to execute in the background when the rest of the
+program has exited, the thread is NOT automatically killed. As a result,
+functions should be designed to die (quickly) when the rest of the system does.
+
+Example usage can be found in the developer guide.
 """
 
 from sys import stderr
@@ -15,9 +36,9 @@ import traceback
 import gtk, gobject, glib
 
 
-class MainloopTerminatedError(Exception):
+class MainloopTerminated(Exception):
 	"""
-	Thrown when a thread terminates because the main-loop ended
+	Thrown when a thread terminates because the main-loop ended.
 	"""
 	pass
 
@@ -25,7 +46,32 @@ class MainloopTerminatedError(Exception):
 class RunInBackground(object):
 	"""
 	Decorator to wrap around a function which may take some time to execute but
-	needs to interact with the GTK main thread when it has finished.
+	needs to interact with the GTK main thread when it has finished. Decorated
+	functions must be called from the GTK main thread.
+	
+	This object, when instanciated, is a callable which can be used to decorate a
+	single method/function. The function should be a generator which yields to
+	request changes in the thread it is executing in.
+	
+	By default the generator starts execution in a background thread. It may yield
+	(cur_step, num_steps) tuples which indicate the progress of some background
+	process which can be accessed through a gtk.Adjustment object (see
+	get_adjustment()).
+	
+	When the background process has completed, the function may yeild with no
+	value (i.e. yield None) to indicate that it wishes to be placed in the GTK
+	thread. This is done by inserting it into the mainloop's idle queue. The
+	function should then run to completion in the GTK thread.
+	
+	If a wrapped method is called again before the previous call was not complete,
+	the call is placed in a queue and will be executed when the previous call is
+	complete. If max_queue_length is a positive, non-zero integer, the queue is
+	limited to this many outstanding calls. Once full, older calls are removed in
+	favour of newer calls.
+	
+	If start_in_gtk is True, the function wrapped starts executing in the GTK
+	thread and, after yielding, is transferred to a background thread where
+	execution should continue as-per-usual.
 	"""
 	
 	def __init__(self, max_queue_length = 1, method = True, start_in_gtk = False):
@@ -39,8 +85,10 @@ class RunInBackground(object):
 		method is a bool specifying whether this function is a method of an object
 		(and thus each instance of the object should have its own call queue).
 		
-		start_in_gtk indicates if the thread should run in the GTK thread until the
-		first yield and then afterwards run in a thread until the first None yield.
+		start_in_gtk indicates if the thread should start in the GTK thread and then
+		on the first yield enter the background thread and run as-usual. Note that
+		if the call is queued the initial execution of the method in the GTK thread
+		will be delayed until the presently running call has completed.
 		"""
 		
 		self.method           = method
@@ -191,7 +239,7 @@ class RunInBackground(object):
 			self.gtk_quit_remove(bailout)
 			
 			if bailed_out[0]:
-				raise MainloopTerminatedError("Thread aborted (GTK Mainloop Ended)!")
+				raise MainloopTerminated("Thread aborted (GTK Mainloop Ended)!")
 		
 		
 		def get_generator():
@@ -284,7 +332,7 @@ class RunInBackground(object):
 					queue.pop(0)
 					queue_empty = len(queue) == 0
 		
-		except MainloopTerminatedError, e:
+		except MainloopTerminated, e:
 			# The mainloop caused this thread to end prematurely while executing
 			# something in the GTK mainloop. As nothing critical should happen here
 			# this is not a problem and since the application is going down and

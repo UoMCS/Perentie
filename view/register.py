@@ -153,6 +153,9 @@ class RegisterBankViewer(gtk.VBox):
 		# A tree view is used to display the integer registers
 		self.register_list = gtk.TreeView(self.register_list_model)
 		
+		# Don't show a search box when typing into the register list window
+		self.register_list.set_enable_search(False)
+		
 		# The row of the interger register being edited. This row will not be
 		# refreshed to prevent the editor being killed.
 		self.editing_row = None

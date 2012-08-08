@@ -5,8 +5,11 @@ A set of device accessor functions provided as a mixin for the System. Provides
 a cleaner, memoised interface to the device meaning that certain repeated
 requests for the same values are not made.
 
-If an error occurs when accessing a feature, it should be logged and a "default"
-value returned instead (e.g. zeros).
+Unless otherwise stated, all functions are thread-safe and can be used, for
+example within functions decorated by RunInBackground.
+
+If an error occurs when accessing a feature, it should be logged and a valid
+"default" value returned instead (e.g. -1).
 
 This interface is not complete and is being added to as required. The back-end
 should only be accessed within the program via this interface so if a feature

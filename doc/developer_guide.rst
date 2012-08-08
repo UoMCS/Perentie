@@ -145,10 +145,13 @@ Device
 ``````
 The device mix-in (device.py) provides cleaner access to the back-end.  GUI code
 should not directly access the back-end and should instead use this interface.
-Unfortunately this interface is not yet complete and should be extended as
-required.
+This interface is thread-safe and, because it is slow, should be accessed from a
+background thread to prevent the GUI from blocking.
 
 By convention, if a value cannot be accessed, -1 is provided instead.
+
+Unfortunately this interface is not yet complete and should be extended as
+required.
 
 Expression Evaluator
 ````````````````````
@@ -290,3 +293,192 @@ and additional tool-tip information for a given address. These objects are
 instanciated by the get_annotation method in the MemoryTableViewer class (in
 view/memory.py). As breakpoints etc. are not currently implemented, only
 register pointers are displayed as annotations.
+
+
+RunInBackground Decorator
+`````````````````````````
+
+To prevent the GUI from becoming blocked when communicating with the device.
+Because GTK only allows access to its functions from within the main program/GTK
+thread, this means putting communication logic in a separate thread and sending
+the results to the GUI thread for display. To make this as painless as possible,
+a python decorator is provided which abstracts awway the grimy details.
+
+The following examples (which use a made-up api for example purposes) show how
+the decorator might be used. Full documentation on the decorator and how it
+works can be found in view/background.py.
+
+Health Warning
+~~~~~~~~~~~~~~
+This feature makes use of a number of relatively advanced Python features.
+Having said this, it should be safe to use the feature as shown in the examples
+and as seen in the code without having to understand how it works behind the
+scenes.
+
+Most visibly it is a semi-abuse of the Python 'generator' feature. If
+you are not familliar with Python's generator syntax you should note that
+"yield" is a key word used by generators and has nothing inherently to do
+with threading.
+
+It also exposes a few oddities in the way that decorators work which mean that
+some things may seem a bit strange/arbitrary if you're not familliar with the
+intricacies of how decorators and classes/methods interact in Python.
+
+Google or look at the docs for generators and decorators to find out more. If
+you're feeling keen, jump down the rabbit hole and take a look at the
+implementation. The implementation is heavily commented and tries not to leave
+out explanation when unusual features are used. Don't be too put off :).
+
+Example 1:
+~~~~~~~~~~
+A method which fetches some data from the board (a slow process) and then
+updates the GUI::
+
+	class MyClass(object):
+		
+		...
+	
+		@RunInBackground()
+		def update_view(self, addr):
+			# The function starts execution in its own thread
+			
+			# Read a value from the board. This function blocks for some time before
+			# returning a value. Note: this operation must be thread-safe.
+			value = read_from_board(addr)
+			
+			# Once all work is done in the thread, execution is switched to the GTK thread
+			# by yielding.
+			yield
+			
+			# Update the widget directly (this is allowed as we're in the GTK thread).
+			self.widget.set_value(value)
+
+When update_view is called it will return instantly and execution of the method
+body will begin in a separate thread. It will execute in this thread until it
+yields. It will then be inserted into the GTK main-loop idle queue and, when the
+GTK main loop picks it up, will safely continue execution in the GTK main thread.
+
+Example 2:
+~~~~~~~~~~
+A method which checks something in the GUI and uses the result to fetch some
+data from the board (a slow process) and then updates the GUI::
+
+	class MyClass(object):
+		
+		...
+	
+		@RunInBackground(start_in_gtk = True)
+		def update_view_from_gui(self):
+			# Because start_in_gtk is True, the function starts execution in the GTK
+			# thread so we can safely access the value of a widget
+			try:
+				addr = int(self.addr_box.get_text())
+			except ValueError, e:
+				# If the user entered something that didn't make sense, log the error
+				log_error(e)
+				
+				# By returning before we yield we terminate the call early and execution
+				# does not continue in another thread.
+				return
+			
+			yield
+			# Now we've yielded, we continue execution in a background thread as in
+			# example 1.
+			
+			# Read a value from the board at the address we just read out of a text-box.
+			value = read_from_board(addr)
+			
+			# Once all work is done in the thread, execution is switched to the GTK thread
+			# by yielding.
+			yield
+			
+			# Update the widget directly (this is allowed as we're in the GTK thread).
+			self.widget.set_value(value)
+
+This example is similar to example 1 except that execution initially starts in
+the GTK main thread and only enters the background thread when we yield. From
+then on it behaves the same allowing us to yield once more in the background
+thread to re-enter the GTK main thread.
+
+One other detail is that in the event of a value error we can return and stpo
+the function continuing. This may also be used while in the background thread or
+at any other time to halt execution of the function.
+
+
+Example 3:
+~~~~~~~~~~
+A method which takes a very long time to execute and displays its progress in a
+progress bar::
+
+	class MyClass(object):
+		
+		def __init__(self):
+			
+			...
+			
+			# We get the gtk.Adjustment object which represents the progress of the
+			# function decorated by load_memory_image_decorator by requesting it for
+			# this instance of MyClass from the decorator. (Note the slightly usual
+			# way you must request this).
+			adjustment = MyClass.load_memory_image_decorator(self)
+			
+			# Set a progress bar's adjutment object to the adjustment corresponding to
+			# this method. This adjustment will be updated as the method executes and
+			# the progress bar will be automatically redrawn by GTK to show this, no
+			# further code required!
+			self.progressbar.set_adjustment(adjustment)
+		
+		
+		...
+		
+		
+		# load_memory_image_decorator is a (static) refrence to a RunInBackground
+		# decorator which is interrogated to retrieve a gtk.Adjustment which
+		# contains progress information.
+		load_memory_image_decorator = RunInBackground()
+		
+		# We decorate the method with the update_with_progress_decorator object we
+		# created above
+		@load_memory_image_decorator
+		def load_memory_image(self, image_file):
+			# Execution begins in a background thread
+			
+			# Go through the image file, address-by-address...
+			num_entries = len(image_file)
+			for entry_num, (addr, value) in enumerate(image_file.get_data()):
+				# ...and write the value to the board
+				write_to_board(addr, value)
+				
+				# To indicate the progress of the operation, yield a tuple containing
+				# the entry number we're up to and the number of entries in total. This
+				# will not cause execution to leave the background thread but will cause
+				# an update to the gtk.Adjustment and thus the progress bar in the GUI.
+				yield (entry_num, num_entries)
+			
+			# Once all work is done in the thread we do an empty yield which finally
+			# returns us to the GTK thread. This action also resets the gtk.Adjustment
+			# to zero (i.e. resets the progress bar).
+			yield
+			
+			# Upade the display to reflect newly loaded data
+			self.update_display()
+
+In this example, a gtk.Adjustment (gtk-speak for an object containing the data
+to be displayed in, for example, a progress bar) is retrieved from the decorator
+and passed to a progress bar.
+
+While in a background thread you can yield (current_progress, max_progress) tuples to
+indicate your progress through a long-running task. Whenever a tuple such as
+this is yeilded, the process is not placed in a background task but continues to
+run in the background thread. Instead, the values returned are used to set the
+values of the gtk.Adjustment so that the progressbar attached updates
+accordingly.
+
+Once the background thread has finished, an empty yield causes the execution to
+continue in the GTK thread as-per-usual. You can only yield progress updates
+while in the background thread.
+
+Note that every time a progress update is yieleded a call to update the
+adjustment is added to the GTK idle queue. As a result you should be careful not
+to generate these updates too fast otherwise the system will spend most of its
+time redrawing the progress bar!
