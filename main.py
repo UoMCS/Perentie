@@ -14,6 +14,7 @@ from view.memory           import MemoryViewer
 from view.control_bar      import ControlBar
 from view.progress_monitor import ProgressMonitor
 from view.log              import LogViewer
+from view.peripherals      import get_peripheral_view
 
 
 class Main(gtk.Window):
@@ -53,7 +54,6 @@ class Main(gtk.Window):
 		self.register_viewer = RegisterViewer(self.system)
 		self.hpaned.pack1(self.register_viewer, shrink = False)
 		
-		
 		# Add a movable division between the two memory viewers
 		self.vpaned = gtk.VPaned()
 		self.hpaned.pack2(self.vpaned, shrink = False)
@@ -91,6 +91,30 @@ class Main(gtk.Window):
 		self.log_expander.connect("activate", self._on_log_update, None)
 		self.log_expander.set_use_markup(True)
 		self.vbox.pack_start(self.log_expander, expand = False, fill = True)
+		
+		# Get peripherals
+		for periph_num, (periph_id, periph_sub_id) in enumerate(self.system.get_peripheral_ids()):
+			viewer = get_peripheral_view(periph_id, periph_sub_id)
+			if viewer is not None and viewer[1] is not None:
+				name, view_class = viewer
+				periph_widget = view_class(self.system, periph_num, periph_id, periph_sub_id)
+				
+				# Create a window to display the widget
+				periph_window = gtk.Window()
+				periph_window.add(periph_widget)
+				periph_window.set_title(periph_widget.get_name())
+				periph_window.set_icon(periph_widget.get_icon(gtk.ICON_SIZE_MENU))
+				periph_window.set_default_size(350, 250)
+				
+				# Add toolbar button to show the window
+				def show_periph_window(button):
+					periph_window.show_all()
+					periph_window.present()
+				self.control_bar.add_peripheral(periph_widget, show_periph_window)
+				
+				# Add progress monitors
+				for adjustment, name in periph_widget.get_progress_adjustments():
+					self.progress_monitor.add_adjustment(adjustment, name)
 		
 		# Interval at which to auto refresh the UI's contents
 		glib.timeout_add(Main.REFRESH_INTERVAL, self._on_interval)

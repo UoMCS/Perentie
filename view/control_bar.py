@@ -20,6 +20,10 @@ class ControlBar(gtk.Toolbar):
 		
 		self.system = system
 		
+		# Flag indicating that some peripherals have been added (used to draw a
+		# separator when needed.
+		self.periphs_added = False
+		
 		self._add_button("Reset", gtk.STOCK_REFRESH, self._on_reset_clicked,
 		                 "Reset the board")
 		self.assemble_menu = self._make_menu((
@@ -63,11 +67,12 @@ class ControlBar(gtk.Toolbar):
 			tool.set_homogeneous(True)
 	
 	
-	def _add_button(self, text, icon_stock_id, callback, tooltip):
+	def _add_button(self, text, icon_stock_id, callback, tooltip, icon = None):
 		# Load the stock icon
-		icon = gtk.Image()
-		icon.set_from_stock(icon_stock_id, gtk.ICON_SIZE_LARGE_TOOLBAR)
-		icon.show()
+		if icon is None:
+			icon = gtk.Image()
+			icon.set_from_stock(icon_stock_id, gtk.ICON_SIZE_LARGE_TOOLBAR)
+			icon.show()
 		
 		# Create the button
 		btn = gtk.ToolButton(icon, text)
@@ -109,7 +114,7 @@ class ControlBar(gtk.Toolbar):
 		for item, icon_stock_id, callback in items:
 			# Load the stock icon
 			icon = gtk.Image()
-			icon.set_from_stock(icon_stock_id, gtk.ICON_SIZE_MENU)
+			icon.set_from_stock(icon_stock_id, gtk.ICON_SIZE_LARGE_TOOLBAR)
 			icon.show()
 			
 			# Create the menu item
@@ -173,6 +178,25 @@ class ControlBar(gtk.Toolbar):
 		sep = gtk.SeparatorToolItem()
 		self.insert(sep, -1)
 		sep.show()
+	
+	
+	def add_peripheral(self, peripheral, callback):
+		"""
+		Add a button for the given peripheral widget with the click event connected
+		to the provided callback.
+		"""
+		if not self.periphs_added:
+			self._add_separator()
+			self.periphs_added = True
+		
+		icon = gtk.Image()
+		icon.set_from_pixbuf(peripheral.get_icon(gtk.ICON_SIZE_LARGE_TOOLBAR))
+		icon.show()
+		
+		self._add_button(peripheral.get_short_name(),
+		                 None, callback,
+		                 peripheral.get_name(),
+		                 icon = icon)
 	
 	
 	@RunInBackground()

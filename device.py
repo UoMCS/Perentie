@@ -290,3 +290,16 @@ class DeviceMixin(object):
 			except BackEndError, e:
 				self.log(e)
 				return (DeviceMixin.STATUS_ERROR, -1, -1)
+	
+	
+	def peripheral_download(self, num, data):
+		"""
+		Download some data into a peripheral.
+		Yields the amount of data sent every time a packet is sent. Raises an
+		exception if an error occurs.
+		
+		WARNING: Does not fail transparently!
+		"""
+		with self.device_lock:
+			for progress in self.back_end.peripheral_download_(num, data):
+				yield progress
