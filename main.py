@@ -37,7 +37,7 @@ class Main(gtk.Window):
 		))
 		
 		# Default window size
-		self.set_default_size(800, 600)
+		self.set_default_size(900, 650)
 		
 		self.vbox = gtk.VBox()
 		self.add(self.vbox)
