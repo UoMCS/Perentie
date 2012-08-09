@@ -25,6 +25,14 @@ from back_end.util       import i2b, b2i, bits_to_bytes
 from back_end.bodge import xxx_pad_width
 
 
+class DeviceKilled(Exception):
+	"""
+	Exception raised when the device comms are killed (e.g. when the GUI
+	terminates).
+	"""
+	pass
+
+
 
 class DeviceMixin(object):
 	"""
@@ -55,7 +63,29 @@ class DeviceMixin(object):
 		self.device_lock = Lock()
 		self.cache_lock = Lock()
 		
+		# Trigger to cause device access functions to fail
+		self.kill_device_lock = Lock()
+		self.kill_device      = False
+		
 		self.clear_cache()
+	
+	
+	def kill_device_comms(self):
+		"""
+		Causes all future requests to the device to raise an exception.
+		"""
+		with self.kill_device_lock:
+			self.kill_device = True
+	
+	
+	def assert_not_killed(self):
+		"""
+		Raises an exception if the device has been killed.
+		"""
+		
+		with self.kill_device_lock:
+			if self.kill_device:
+				raise DeviceKilled("Device communications ended.")
 	
 	
 	def clear_cache(self):
@@ -63,6 +93,7 @@ class DeviceMixin(object):
 		Empties the cache of board responses
 		"""
 		with self.cache_lock:
+			self.assert_not_killed()
 			self.cached_registers = {}
 	
 	
@@ -99,6 +130,8 @@ class DeviceMixin(object):
 		Get the processor (type, sub_type). If there is an error, returns (-1,-1)
 		"""
 		with self.device_lock:
+			self.assert_not_killed()
+			
 			try:
 				self.resync()
 				cpu_type, _, _ = self.back_end.get_board_definition()
@@ -113,6 +146,8 @@ class DeviceMixin(object):
 		Get a list of peripheral IDs as (id, sub_id) for all peripherals.
 		"""
 		with self.device_lock:
+			self.assert_not_killed()
+			
 			try:
 				self.resync()
 				_, peripheral_ids, _ = self.back_end.get_board_definition()
@@ -127,6 +162,8 @@ class DeviceMixin(object):
 		Read a register as given in the Architecture. Returns -1 on error.
 		"""
 		with self.device_lock:
+			self.assert_not_killed()
+			
 			# Get the value from the cache if possible
 			with self.cache_lock:
 				if register in self.cached_registers:
@@ -156,6 +193,8 @@ class DeviceMixin(object):
 		Write a register as given in the Architecture.
 		"""
 		with self.device_lock:
+			self.assert_not_killed()
+			
 			# Remove the value from the cache (when re-reading read the value from the
 			# device in-case the register is changed on write.
 			with self.cache_lock:
@@ -183,6 +222,8 @@ class DeviceMixin(object):
 		-1s are returned.
 		"""
 		with self.device_lock:
+			self.assert_not_killed()
+			
 			try:
 				self.resync()
 				
@@ -212,6 +253,8 @@ class DeviceMixin(object):
 		Write to a memory as given in the Architecture.
 		"""
 		with self.device_lock:
+			self.assert_not_killed()
+			
 			# Remove the value from the cache (when re-reading read the value from the
 			# device in-case the register is changed on write.
 			try:
@@ -235,6 +278,8 @@ class DeviceMixin(object):
 	
 	def reset(self):
 		with self.device_lock:
+			self.assert_not_killed()
+			
 			try:
 				self.back_end.reset()
 			except BackEndError, e:
@@ -246,6 +291,8 @@ class DeviceMixin(object):
 	        halt_on_mem_fault = False, step_over_swi = False,
 	        step_over_bl = False, break_on_first_instruction = True):
 		with self.device_lock:
+			self.assert_not_killed()
+			
 			try:
 				self.back_end.run(max_steps,
 													halt_on_watchpoint, halt_on_breakpoint, halt_on_mem_fault,
@@ -257,6 +304,8 @@ class DeviceMixin(object):
 	
 	def stop(self):
 		with self.device_lock:
+			self.assert_not_killed()
+			
 			try:
 				self.back_end.stop_execution()
 			except BackEndError, e:
@@ -265,6 +314,8 @@ class DeviceMixin(object):
 	
 	def pause_execution(self):
 		with self.device_lock:
+			self.assert_not_killed()
+			
 			try:
 				self.back_end.pause_execution()
 			except BackEndError, e:
@@ -273,6 +324,8 @@ class DeviceMixin(object):
 	
 	def continue_execution(self):
 		with self.device_lock:
+			self.assert_not_killed()
+			
 			try:
 				self.back_end.continue_execution()
 			except BackEndError, e:
@@ -285,6 +338,8 @@ class DeviceMixin(object):
 		(status, steps_remaining, steps_since_reset).
 		"""
 		with self.device_lock:
+			self.assert_not_killed()
+			
 			try:
 				return self.back_end.get_status()
 			except BackEndError, e:
@@ -301,5 +356,7 @@ class DeviceMixin(object):
 		WARNING: Does not fail transparently!
 		"""
 		with self.device_lock:
+			self.assert_not_killed()
+			
 			for progress in self.back_end.peripheral_download_(num, data):
 				yield progress

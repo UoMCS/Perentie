@@ -119,6 +119,9 @@ class Main(gtk.Window):
 		# Interval at which to auto refresh the UI's contents
 		glib.timeout_add(Main.REFRESH_INTERVAL, self._on_interval)
 		
+		# Kill comms on GTK mainloop exit
+		gtk.quit_add(0, self.system.kill_device_comms)
+		
 		self.connect("destroy", gtk.main_quit)
 	
 	
