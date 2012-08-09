@@ -108,6 +108,20 @@ class DeviceMixin(object):
 				return (-1, -1)
 	
 	
+	def get_peripheral_ids(self):
+		"""
+		Get a list of peripheral IDs as (id, sub_id) for all peripherals.
+		"""
+		with self.device_lock:
+			try:
+				self.resync()
+				_, peripheral_ids, _ = self.back_end.get_board_definition()
+				return peripheral_ids
+			except BackEndError, e:
+				self.log(e)
+				return []
+	
+	
 	def read_register(self, register):
 		"""
 		Read a register as given in the Architecture. Returns -1 on error.

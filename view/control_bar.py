@@ -231,7 +231,8 @@ class ControlBar(gtk.Toolbar):
 			self._on_reload_clicked(btn)
 	
 	
-	@RunInBackground()
+	loader_background_decorator = RunInBackground()
+	@loader_background_decorator
 	def _on_reload_clicked(self, btn):
 		"""
 		Reload the current image file

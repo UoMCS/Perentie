@@ -9,10 +9,11 @@ import pygtk, gtk, glib, gobject
 from back_end import EmulatorBackEnd, SerialPortBackEnd
 from system   import System
 
-from view.register    import RegisterViewer
-from view.memory      import MemoryViewer
-from view.control_bar import ControlBar
-from view.log         import LogViewer
+from view.register         import RegisterViewer
+from view.memory           import MemoryViewer
+from view.control_bar      import ControlBar
+from view.progress_monitor import ProgressMonitor
+from view.log              import LogViewer
 
 
 class Main(gtk.Window):
@@ -72,6 +73,14 @@ class Main(gtk.Window):
 		f2.set_shadow_type(gtk.SHADOW_OUT)
 		self.vpaned.pack1(f1, resize = True, shrink = False)
 		self.vpaned.pack2(f2, resize = True, shrink = False)
+		
+		# Add a progress monitor for long-running background functions
+		self.progress_monitor = ProgressMonitor(self.system)
+		self.progress_monitor.add_adjustment(
+			ControlBar.loader_background_decorator.get_adjustment(self.control_bar),
+			"Loading Memory Image"
+			)
+		self.vbox.pack_start(self.progress_monitor, expand=False, fill=True)
 		
 		# Add an expander with a log viewer in
 		self.unread_log_entries = 0

@@ -422,11 +422,10 @@ progress bar::
 			# way you must request this).
 			adjustment = MyClass.load_memory_image_decorator(self)
 			
-			# Set a progress bar's adjutment object to the adjustment corresponding to
-			# this method. This adjustment will be updated as the method executes and
-			# the progress bar will be automatically redrawn by GTK to show this, no
-			# further code required!
-			self.progressbar.set_adjustment(adjustment)
+			# This adjustment will be updated as the method executes and the progress
+			# monitor can use the events fired by the adjustment to update a progress
+			# bar.
+			self.progress_monitor.set_adjustment(adjustment)
 		
 		
 		...
@@ -463,9 +462,9 @@ progress bar::
 			# Upade the display to reflect newly loaded data
 			self.update_display()
 
-In this example, a gtk.Adjustment (gtk-speak for an object containing the data
-to be displayed in, for example, a progress bar) is retrieved from the decorator
-and passed to a progress bar.
+In this example, a gtk.Adjustment (gtk-speak for an object containing the
+progress data to be displayed in, for example, a progress bar) is retrieved from
+the decorator and passed to a progress bar.
 
 While in a background thread you can yield (current_progress, max_progress) tuples to
 indicate your progress through a long-running task. Whenever a tuple such as
