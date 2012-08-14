@@ -20,12 +20,16 @@ class ControlBar(gtk.Toolbar):
 		
 		self.system = system
 		
+		# A list of widgets which are disabled when the processor is busy
+		self.disabled_on_busy = []
+		
 		# Flag indicating that some peripherals have been added (used to draw a
 		# separator when needed.
 		self.periphs_added = False
 		
-		self._add_button("Reset", gtk.STOCK_REFRESH, self._on_reset_clicked,
-		                 "Reset the board")
+		b = self._add_button("Reset", gtk.STOCK_REFRESH, self._on_reset_clicked,
+		                     "Reset the board")
+		self.disabled_on_busy.append(b)
 		self.assemble_menu = self._make_menu((
 			("Reassemble", gtk.STOCK_CONVERT, self._on_reassemble_clicked),
 			("Select Source File", gtk.STOCK_OPEN, self._on_select_source_file_clicked),
@@ -43,22 +47,28 @@ class ControlBar(gtk.Toolbar):
 		
 		self._add_separator()
 		
-		self._add_button("Run", gtk.STOCK_MEDIA_PLAY, self._on_run_clicked,
-		                 "Run indefinately")
-		self._add_button("Stop", gtk.STOCK_MEDIA_STOP, self._on_stop_clicked,
-		                 "Stop and ignore remaining steps")
+		b = self._add_button("Run", gtk.STOCK_MEDIA_PLAY, self._on_run_clicked,
+		                     "Run indefinately")
+		self.disabled_on_busy.append(b)
+		b = self._add_button("Stop", gtk.STOCK_MEDIA_STOP, self._on_stop_clicked,
+		                     "Stop and ignore remaining steps")
+		self.disabled_on_busy.append(b)
 		
 		self._add_separator()
 		
-		self._add_button("Step", gtk.STOCK_MEDIA_NEXT, self._on_step_clicked,
-		                 "Execute a single step")
-		self._add_button("Multi-Step", gtk.STOCK_MEDIA_FORWARD, self._on_multi_step_clicked,
-		                 "Run for the specified number of steps")
-		self.pause_btn = self._add_toggle_button(
+		b = self._add_button("Step", gtk.STOCK_MEDIA_NEXT, self._on_step_clicked,
+		                     "Execute a single step")
+		self.disabled_on_busy.append(b)
+		b = self._add_button("Multi-Step", gtk.STOCK_MEDIA_FORWARD, self._on_multi_step_clicked,
+		                     "Run for the specified number of steps")
+		self.disabled_on_busy.append(b)
+		b = self.pause_btn = self._add_toggle_button(
 		                      "Pause", gtk.STOCK_MEDIA_PAUSE, self._on_pause_clicked,
 		                      "Toggle Pause Multi-Stepping")
-		self.multi_step_spin = self._add_spin_box(4, 1, 1<<32, self._on_multi_step_changed,
+		self.disabled_on_busy.append(b)
+		b = self.multi_step_spin = self._add_spin_box(4, 1, 1<<32, self._on_multi_step_changed,
 		                   "Number of steps to execute for Multi-Step")
+		self.disabled_on_busy.append(b)
 		
 		# Show text and icons
 		self.set_style(gtk.TOOLBAR_BOTH)
@@ -397,5 +407,23 @@ class ControlBar(gtk.Toolbar):
 		self.pause_btn.handler_unblock_by_func(self._on_pause_clicked)
 	
 	
+	@RunInBackground()
+	def _refresh_busy(self):
+		"""
+		If the processor is busy, disable the control buttons.
+		"""
+		status, _, _ = self.system.get_status()
+		
+		is_busy = status == self.system.STATUS_BUSY
+		
+		# Run in GTK thread
+		yield
+		
+		# Update the pause button
+		for widget in self.disabled_on_busy:
+			widget.set_sensitive(not is_busy)
+	
+	
 	def refresh(self):
 		self._refresh_pause_btn()
+		self._refresh_busy()
