@@ -104,7 +104,6 @@ class Main(gtk.Window):
 				periph_window.add(periph_widget)
 				periph_window.set_title(periph_widget.get_name())
 				periph_window.set_icon(periph_widget.get_icon(gtk.ICON_SIZE_MENU))
-				periph_window.set_default_size(350, 250)
 				
 				# Prevent being closed (just hide)
 				def on_close(window, event):

@@ -10,7 +10,7 @@ from threading import Lock
 from ..background       import RunInBackground
 from ..progress_monitor import ProgressMonitor
 
-import gtk
+import gtk, pango
 
 from base import PeripheralWidget
 
@@ -69,7 +69,7 @@ def read_bitfile(f):
 
 
 
-class Spartan3(gtk.Table, PeripheralWidget):
+class Spartan3(gtk.VBox, PeripheralWidget):
 	"""
 	A widget for controlling an attached spartan-3 FPGA.
 	"""
@@ -122,26 +122,46 @@ class Spartan3(gtk.Table, PeripheralWidget):
 	
 	
 	def __init__(self, system, periph_num, periph_id, periph_sub_id):
-		gtk.Table.__init__(self, rows = 6, columns = 2, homogeneous = False)
+		gtk.VBox.__init__(self, spacing = 10)
 		PeripheralWidget.__init__(self, system, periph_num, periph_id, periph_sub_id)
 		
 		# Lock for bit-file data variables access
 		self.data_lock   = Lock()
+		self.filename    = None
 		self.design_name = None
 		self.device_name = None
 		self.datestamp   = None
 		self.timestamp   = None
 		self.data        = None
+		# Data actually on the FPGA
+		self.fpga_filename    = None
+		self.fpga_design_name = None
+		self.fpga_device_name = None
+		self.fpga_datestamp   = None
+		self.fpga_timestamp   = None
 		
 		# Space the widget's contents from the edge of the container as they're just
 		# buttons and labels (which don't have their own padding).
-		self.set_border_width(5)
+		self.set_border_width(10)
+		
+		self.table = gtk.Table(rows = 5, columns = 4, homogeneous = False)
+		self.table.set_row_spacings(2)
+		self.pack_start(self.table, fill = True, expand = False)
+		
+		# Add a vertical separator
+		sep = gtk.VSeparator()
+		self.table.attach(sep, 2,3, 0,5,
+		                  xoptions=gtk.FILL, yoptions=gtk.FILL, xpadding=5)
+		
+		# Add headings
+		self._add_heading("Bit File", 0, 1)
+		self._add_heading("FPGA", 0, 3)
 		
 		# Space between labels and entries
-		self.set_col_spacing(0, 10)
+		self.table.set_col_spacing(0, 10)
 		
 		# File name selection box/button
-		self.filename_box   = gtk.FileChooserButton("Select a Bit File")
+		self.filename_box = gtk.FileChooserButton("Select a Bit File")
 		
 		# Set filename filters
 		bit_file_filter = gtk.FileFilter()
@@ -156,50 +176,90 @@ class Spartan3(gtk.Table, PeripheralWidget):
 		
 		self.filename_box.connect("file-set", self._on_file_set)
 		
-		self._add_row("Bit File:", self.filename_box, 0)
+		self.refresh_button = gtk.Button("Refresh")
+		self.refresh_button.connect("clicked", self._on_file_set)
 		
-		# Space between file-chooser and meta-data
-		self.set_row_spacing(0, 5)
+		hbox = gtk.HBox(homogeneous = False, spacing = 5)
+		hbox.pack_start(self.filename_box, fill = True, expand = True)
+		hbox.pack_start(self.refresh_button, fill = True, expand = False)
+		
+		# Label displaying the FPGA's loaded filename
+		self.fpga_filename_label = gtk.Label()
+		self.fpga_filename_label.set_ellipsize(pango.ELLIPSIZE_START)
+		
+		self._add_row("File:", hbox, self.fpga_filename_label, 1)
 		
 		# Show the design meta-data
 		self.design_name_label     = gtk.Label()
 		self.device_name_label     = gtk.Label()
 		self.date_time_stamp_label = gtk.Label()
+		self.fpga_design_name_label     = gtk.Label()
+		self.fpga_device_name_label     = gtk.Label()
+		self.fpga_date_time_stamp_label = gtk.Label()
 		
-		self._add_row("Design Name:",   self.design_name_label,     1)
-		self._add_row("Target Device:", self.device_name_label,     2)
-		self._add_row("Compile time:",  self.date_time_stamp_label, 3)
-		
-		# Space before progress viewer
-		self.set_row_spacing(3, 5)
+		self._add_row("Design:",
+		              self.design_name_label,
+		              self.fpga_design_name_label,
+		              2)
+		self._add_row("Target:",
+		              self.device_name_label,
+		              self.fpga_device_name_label, 
+		              3)
+		self._add_row("Synthesised:",
+		              self.date_time_stamp_label,
+		              self.fpga_date_time_stamp_label,
+		              4)
 		
 		# Add a progress monitor
 		self.progress_monitor = ProgressMonitor(self.system, auto_hide = False)
 		self.progress_monitor.add_adjustment(Spartan3.downloader_decorator.get_adjustment(self))
-		self._add_row("Download Progress:", self.progress_monitor, 4)
+		self.pack_start(self.progress_monitor, fill=True, expand=False)
 		
-		# Space before button
-		self.set_row_spacing(4, 5)
+		# Box containing the buttons
+		self.button_box = gtk.HButtonBox()
+		self.button_box.set_layout(gtk.BUTTONBOX_CENTER)
+		self.button_box.set_spacing(5)
+		self.pack_start(self.button_box, fill = True, expand = False)
 		
 		# Add a download button
 		self.download_btn = gtk.Button("Download onto FPGA")
 		self.download_btn.set_sensitive(False)
 		self.download_btn.connect("clicked", self._on_donwload_clicked)
-		self.attach(self.download_btn, 1,2, 5,6,
-		            xoptions=gtk.EXPAND|gtk.FILL, yoptions=gtk.FILL)
+		self.button_box.pack_start(self.download_btn)
+		
+		# Add an erase button
+		self.erase_btn = gtk.Button("Erase FPGA")
+		self.erase_btn.set_sensitive(True)
+		self.erase_btn.connect("clicked", self._on_erase_clicked)
+		self.button_box.pack_start(self.erase_btn)
+		
+		# Update all labels
+		self.display_meta_data()
 	
 	
-	def _add_row(self, label, widget, row):
+	def _add_heading(self, text, row, col):
+		"""
+		Adds a heading to the table.
+		"""
+		label = gtk.Label()
+		label.set_markup("<b>%s</b>"%text)
+		self.table.attach(label, col,col+1, row,row+1, ypadding=5,
+		                  xoptions=gtk.FILL|gtk.EXPAND, yoptions=gtk.FILL)
+	
+	
+	def _add_row(self, label, widget1, widget2, row):
 		"""
 		Add a row to the table containing a label with the text provieded in label
-		and a widget named widget in the given row.
+		and a pair of widgets in the given row.
 		"""
 		label_widget = gtk.Label(label)
+		self.table.attach(label_widget, 0, 1, row, row+1,
+		                  xoptions=gtk.FILL, yoptions=gtk.FILL)
 		
-		self.attach(label_widget, 0, 1, row, row+1,
-		            xoptions=gtk.FILL, yoptions=gtk.FILL)
-		self.attach(widget, 1, 2, row, row+1,
-		            xoptions=gtk.EXPAND|gtk.FILL, yoptions=gtk.FILL)
+		self.table.attach(widget1, 1, 2, row, row+1,
+		                  xoptions=gtk.EXPAND|gtk.FILL, yoptions=gtk.FILL)
+		self.table.attach(widget2, 3, 4, row, row+1,
+		                  xoptions=gtk.EXPAND|gtk.FILL, yoptions=gtk.FILL)
 		
 	
 	
@@ -255,6 +315,19 @@ class Spartan3(gtk.Table, PeripheralWidget):
 		# Do file loading in a background thread
 		yield
 		
+		self.load_file(filename)
+		
+		# Display the file's meta-data in the GTK thread.
+		yield
+		
+		self.display_meta_data()
+	
+	
+	def load_file(self, filename):
+		"""
+		Load a bit file.
+		"""
+		
 		# Try and open the file
 		f = None
 		if filename is not None:
@@ -281,35 +354,55 @@ class Spartan3(gtk.Table, PeripheralWidget):
 						(self.datestamp, self.timestamp),
 						self.data,
 					) = read_bitfile(f)
+					self.filename = filename
 				except Exception, e:
 					self.system.log(e, True)
-		
-		# Display the file's meta-data in the GTK thread.
-		yield
-		
-		design_name_text = self.design_name or ""
-		
-		if self.device_name is not None:
-			if self.device_name == self.get_model(short_version = True):
-				device_name_text = self.device_name
+	
+	
+	def display_meta_data(self):
+		"""
+		Display the metadata for the current file and fpga contents.
+		"""
+		with self.data_lock:
+			fpga_filename_text = self.fpga_filename or "(None)"
+			
+			design_name_text      = self.design_name      or "(None)"
+			fpga_design_name_text = self.fpga_design_name or "(None)"
+			
+			if self.device_name is not None:
+				if self.device_name == self.get_model(short_version = True):
+					device_name_text = self.device_name
+				else:
+					device_name_text = "%s (Warning: Different Model!)"%self.device_name
 			else:
-				device_name_text = "%s (Warning: Different Model!)"%self.device_name
-		else:
-			device_name_text = ""
-		
-		if self.datestamp is not None and self.timestamp is not None:
-			timestamp_text = "%s %s"%(self.datestamp, self.timestamp)
-		else:
-			timestamp_text = ""
+				device_name_text = "(None)"
+			
+			fpga_device_name_text = self.fpga_design_name or "(None)"
+			
+			if self.datestamp is not None and self.timestamp is not None:
+				timestamp_text = "%s %s"%(self.datestamp, self.timestamp)
+			else:
+				timestamp_text = "(None)"
+			
+			if self.fpga_datestamp is not None and self.fpga_timestamp is not None:
+				fpga_timestamp_text = "%s %s"%(self.fpga_datestamp, self.fpga_timestamp)
+			else:
+				fpga_timestamp_text = "(None)"
+			
+			data_valid = self.data is not None and len(self.data) > 0
 		
 		# Update meta-data labels
 		self.design_name_label.set_text(design_name_text)
 		self.device_name_label.set_text(device_name_text)
 		self.date_time_stamp_label.set_text(timestamp_text)
 		
+		self.fpga_filename_label.set_text(fpga_filename_text)
+		self.fpga_design_name_label.set_text(fpga_design_name_text)
+		self.fpga_device_name_label.set_text(fpga_device_name_text)
+		self.fpga_date_time_stamp_label.set_text(fpga_timestamp_text)
+		
 		# Enable download button if there's data
-		self.download_btn.set_sensitive(self.data is not None)
-	
+		self.download_btn.set_sensitive(data_valid)
 	
 	
 	downloader_decorator = RunInBackground(start_in_gtk = True)
@@ -322,6 +415,9 @@ class Spartan3(gtk.Table, PeripheralWidget):
 		
 		# Run the downloader in the background
 		yield
+		
+		# Reload the file incase it has changed
+		self.load_file(self.filename)
 		
 		with self.data_lock:
 			data_length = len(self.data)
@@ -339,3 +435,45 @@ class Spartan3(gtk.Table, PeripheralWidget):
 		
 		self.download_btn.set_sensitive(True)
 		self.download_btn.set_label("Download onto FPGA")
+		
+		with self.data_lock:
+			self.fpga_filename    = self.filename
+			self.fpga_design_name = self.design_name
+			self.fpga_device_name = self.device_name
+			self.fpga_datestamp   = self.datestamp
+			self.fpga_timestamp   = self.timestamp
+		self.display_meta_data()
+	
+	
+	@RunInBackground(start_in_gtk = True)
+	def _on_erase_clicked(self, erase_btn):
+		# Disable the download button (makes it obvious the system is doing
+		# something)
+		self.erase_btn.set_sensitive(False)
+		self.erase_btn.set_label("Erasing...")
+		
+		# Run the downloader in the background
+		yield
+		
+		with self.data_lock:
+			try:
+				# Send a blank bit-file to erase the FPGA.
+				for _ in self.system.peripheral_download(self.periph_num, "\x00"):
+					pass
+			except Exception, e:
+				# Something bad happened and the download failed.
+				self.system.log(e, True)
+		
+		# Return to the GTK thread to re-enable the download button
+		yield
+		
+		self.erase_btn.set_sensitive(True)
+		self.erase_btn.set_label("Erase FPGA")
+		
+		with self.data_lock:
+			self.fpga_filename    = None
+			self.fpga_design_name = None
+			self.fpga_device_name = None
+			self.fpga_datestamp   = None
+			self.fpga_timestamp   = None
+		self.display_meta_data()
