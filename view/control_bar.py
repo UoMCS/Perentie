@@ -295,6 +295,20 @@ class ControlBar(gtk.Toolbar):
 		                                   gtk.STOCK_OPEN, gtk.RESPONSE_OK)
 		)
 		
+		formats = ["*%s"%f for f in self.system.get_loader_formats()]
+		
+		file_filter = gtk.FileFilter()
+		file_filter.set_name("Image File (%s)"%(", ".join(formats)))
+		for f in formats:
+			file_filter.add_pattern(f)
+		
+		all_filter = gtk.FileFilter()
+		all_filter.set_name("All Files")
+		all_filter.add_pattern("*.*")
+		
+		selection.add_filter(file_filter)
+		selection.add_filter(all_filter)
+		
 		if selection.run() == gtk.RESPONSE_OK:
 			self.system.set_image_filename(selection.get_filename())
 			self._on_reload_clicked(btn)
