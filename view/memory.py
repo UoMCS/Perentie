@@ -314,12 +314,13 @@ class MemoryTableViewer(gtk.Table):
 	}
 	
 	# Special Columns in the ListStore
-	ICON_COLUMN    = 0 # The icon for the row
-	COLOUR_COLUMN  = 1 # The row's foreground colour
-	TOOLTIP_COLUMN = 2 # The row's tool-tip
-	ADDR_COLUMN    = 3 # The address of the row
-	LENGTH_COLUMN  = 4 # The length of the row
-	DATA_COLUMN    = 5 # The first column containing data from the memory table
+	ICON_COLUMN     = 0 # The icon for the row
+	COLOUR_COLUMN   = 1 # The row's foreground colour
+	TOOLTIP_COLUMN  = 2 # The row's tool-tip
+	ADDR_COLUMN     = 3 # The address of the row
+	ADDR_INT_COLUMN = 4 # The address of the row as an int
+	LENGTH_COLUMN   = 5 # The length of the row
+	DATA_COLUMN     = 6 # The first column containing data from the memory table
 	
 	
 	# Max scroll speed (scroll 2**MAX_SCROLL_SPEED every 100ms)
@@ -355,6 +356,9 @@ class MemoryTableViewer(gtk.Table):
 		# number should be the size of the first row.
 		self.addr_step = 1
 		
+		# The address in the tree_view which has been selected
+		self.selected_addr = 0
+		
 		# The row of the tree_view currently being edited (this row must not be
 		# updated otherwise it will kill the editor).
 		self.editing_row = None
@@ -365,7 +369,7 @@ class MemoryTableViewer(gtk.Table):
 		# The TreeModel into which data will be inserted for display by the
 		# treeview. Initially contains a single empty row which is used for
 		# measuring the height of a row in the table.
-		self.list_store = gtk.ListStore(gtk.gdk.Pixbuf, str, str, str, int)
+		self.list_store = gtk.ListStore(gtk.gdk.Pixbuf, str, str, str, int, int)
 		self._add_empty_row()
 		
 		# The treeview and model used to display memory elements. The size request
@@ -375,6 +379,11 @@ class MemoryTableViewer(gtk.Table):
 		self.tree_view.set_size_request(0,0)
 		self.attach(self.tree_view, 0,1, 0,1, gtk.EXPAND | gtk.FILL, gtk.EXPAND | gtk.FILL)
 		self.tree_view.show()
+		
+		# Get the selection object and bind to the selection changed event for
+		# monitoring what address is selected
+		self.selection = self.tree_view.get_selection()
+		self.selection.connect("changed", self._on_selection_change)
 		
 		# Add the globally-present address column
 		self._init_addr_column()
@@ -405,7 +414,7 @@ class MemoryTableViewer(gtk.Table):
 		Adds an empty row to the list store.
 		"""
 		cols = [""] * (self.list_store.get_n_columns() - self.DATA_COLUMN)
-		self.list_store.append([POINTER_DEFAULT, "#000000", "Loading...", "", 0] + cols)
+		self.list_store.append([POINTER_DEFAULT, "#000000", "Loading...", "", 0,0] + cols)
 	
 	
 	def _get_row_height(self):
@@ -489,6 +498,23 @@ class MemoryTableViewer(gtk.Table):
 		
 		self.vscrollbar.connect("scroll-event", self._on_scroll_event)
 		self.tree_view.connect("scroll-event",  self._on_scroll_event)
+	
+	
+	def _on_selection_change(self, selection):
+		"""
+		Event fired whenever the selection changes
+		"""
+		# XXX: GTK states path may be an integer or a tuple with an int in. I don't
+		# know how to force it to be one of these but it happens to be tuple with an
+		# int in here...
+		_, selected_paths = self.selection.get_selected_rows()
+		
+		if len(selected_paths):
+			selected_row = selected_paths[0][0]
+		else:
+			selected_row = 0
+		
+		self.selected_addr = self.list_store[selected_row][MemoryTableViewer.ADDR_INT_COLUMN]
 	
 	
 	def _on_vscrollbar_start(self, vscrollbar, event):
@@ -663,6 +689,7 @@ class MemoryTableViewer(gtk.Table):
 			str,                             # Colour
 			str,                             # Toolip-text
 			str,                             # Address
+			int,                             # Address (as int)
 			int,                             # Length
 			] + ([str] * len(columns)))) # Data from the memory table (as strings)
 		
@@ -759,29 +786,36 @@ class MemoryTableViewer(gtk.Table):
 			self.annotations.setdefault(value,[]).append(annotation)
 	
 	
+	def addr_in_range(self, addr, addr_start, length):
+		"""
+		Test to see if an address is in the given range taking into account address
+		wrapping.
+		"""
+		
+		# Alculate the version as if it had been aliased
+		addr_end        = addr_start + length
+		addr_end_masked = addr_end & ((1<<self.memory.addr_width_bits) - 1)
+		
+		# The address wraps around if, when masked, it is different
+		addr_wraps = addr_end != addr_end_masked
+		
+		if addr_wraps:
+			return addr < addr_end_masked or addr >= addr_start
+		else:
+			return addr_start <= addr < addr_end
+	
+	
 	def get_annotation(self, addr_start, length):
 		"""
 		Return an (icon, colour, tooltip) for the given address
 		"""
 		
-		# Get the end address of the location to annotate and also calculate the
-		# version as if it had been aliased
-		addr_end        = addr_start + length
-		addr_end_masked = addr_end & ((1<<self.memory.addr_width_bits) - 1)
-		
-		# The address wraps around if when masked it is different
-		addr_wraps = addr_end != addr_end_masked
-		
 		all_annotations = []
 		
 		# Look for annotations which land in the range
 		for addr, annotations in self.annotations.iteritems():
-			if addr_wraps:
-				if addr < addr_end_masked or addr > addr_start:
-					all_annotations.extend(annotations)
-			else:
-				if addr_start <= addr < addr_end:
-					all_annotations.extend(annotations)
+			if self.addr_in_range(addr, addr_start, length):
+				all_annotations.extend(annotations)
 		
 		if all_annotations:
 			max_annotation = max(all_annotations, key=(lambda a: a.get_priority()))
@@ -818,6 +852,9 @@ class MemoryTableViewer(gtk.Table):
 		# Upadte address step size
 		self.addr_step = memory_table_data[0][1]
 		
+		# The row which should be selected
+		selected_row = None
+		
 		# Add data from memory to the list store (using zip with range of
 		# list_store's length inorder to ensure that we only copy the shorter of the
 		# two's lengths)
@@ -834,10 +871,15 @@ class MemoryTableViewer(gtk.Table):
 			
 			# Do not update the row if it is being edited unless its address has
 			# changed
-			old_addr_col = self.list_store[row][MemoryTableViewer.ADDR_COLUMN]
-			old_length   = self.list_store[row][MemoryTableViewer.LENGTH_COLUMN]
-			if self.editing_row == row and addr_col == old_addr_col and length == old_length:
+			old_addr   = self.list_store[row][MemoryTableViewer.ADDR_INT_COLUMN]
+			old_length = self.list_store[row][MemoryTableViewer.LENGTH_COLUMN]
+			if self.editing_row == row and addr == old_addr and length == old_length:
+				selected_row = -1
 				continue
+			
+			# Select the row if pointed at by the user's selection
+			if selected_row is None and self.addr_in_range(self.selected_addr, addr, length):
+				selected_row = row
 			
 			icon, colour, annotation_tooltips = self.get_annotation(addr, length)
 			
@@ -852,10 +894,21 @@ class MemoryTableViewer(gtk.Table):
 			                                        annotation_tooltips)
 			
 			# Set the cell contents
-			self.list_store[row][MemoryTableViewer.ICON_COLUMN]    = icon
-			self.list_store[row][MemoryTableViewer.COLOUR_COLUMN]  = colour
-			self.list_store[row][MemoryTableViewer.TOOLTIP_COLUMN] = tooltip.strip()
-			self.list_store[row][MemoryTableViewer.ADDR_COLUMN]    = addr_col
-			self.list_store[row][MemoryTableViewer.LENGTH_COLUMN]  = length
+			self.list_store[row][MemoryTableViewer.ICON_COLUMN]     = icon
+			self.list_store[row][MemoryTableViewer.COLOUR_COLUMN]   = colour
+			self.list_store[row][MemoryTableViewer.TOOLTIP_COLUMN]  = tooltip.strip()
+			self.list_store[row][MemoryTableViewer.ADDR_COLUMN]     = addr_col
+			self.list_store[row][MemoryTableViewer.ADDR_INT_COLUMN] = addr
+			self.list_store[row][MemoryTableViewer.LENGTH_COLUMN]   = length
 			for num, datum in enumerate(data):
 				self.list_store[row][MemoryTableViewer.DATA_COLUMN + num] = datum
+		
+		# Select a row if required
+		self.selection.handler_block_by_func(self._on_selection_change)
+		if selected_row is None:
+			self.selection.unselect_all()
+		elif selected_row != -1:
+			# Row -1 is chosen if the user is editing -- don't do anything in this
+			# case otherwise we'd kill their editor.
+			self.selection.select_path(selected_row)
+		self.selection.handler_unblock_by_func(self._on_selection_change)
