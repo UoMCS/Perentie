@@ -13,7 +13,7 @@ from background import RunInBackground
 from format import *
 
 
-class ProgressMonitor(gtk.VBox):
+class ProgressMonitor(gtk.HBox):
 	
 	__gsignals__ = {
 		# Emitted when the progress monitor starts showing the progress for some
@@ -31,7 +31,11 @@ class ProgressMonitor(gtk.VBox):
 		'finished_all': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, tuple()),
 	}
 	
-	def __init__(self, system, auto_hide = True, runtime_threshold = 0.2, spacing = 0):
+	def __init__(self, system,
+	             auto_hide = True,
+	             orientation = gtk.ORIENTATION_VERTICAL,
+	             runtime_threshold = 0.2,
+	             spacing = 0):
 		"""
 		A progress-monitoring widget for long-running background processes which
 		report their progress.
@@ -41,20 +45,33 @@ class ProgressMonitor(gtk.VBox):
 		auto_hide indicates if progress bars should only be shown when the process
 		is actually running.
 		
+		orientation is either gtk.ORIENTATION_VERTICAL or gtk.ORIENTATION_HORIZONTAL and indicates how the
+		progress bars should be stacked.
+		
 		Do not show/raise the started event unless runtime_threshold seconds have
 		elapsed. This prevents progress bars flashing up momentarily for quick
 		processes. Set to 0 to always show.
 		
 		spacing is the gap between each progress bar.
 		"""
-		gtk.VBox.__init__(self, homogeneous = True, spacing = spacing)
+		gtk.HBox.__init__(self, homogeneous = True, spacing = spacing)
 		
 		self.system            = system
 		self.auto_hide         = auto_hide
+		self.orientation       = orientation
 		self.runtime_threshold = runtime_threshold
 		
 		# The set of active progress bars
 		self.active_bars = set()
+		
+		# A GTK box object of the correct orientation
+		if self.orientation == gtk.ORIENTATION_HORIZONTAL:
+			# Just use this container, its an HBox
+			self.box = self
+		else:
+			# XXX: Doesn't expand propperly!
+			self.box = gtk.VBox(spacing = spacing)
+			self.pack_start(self.box, fill = True, expand = True)
 	
 	
 	def _delayed_show(self, adjustment, progress_bar):
@@ -88,7 +105,6 @@ class ProgressMonitor(gtk.VBox):
 			
 			# Alert/show if just started
 			if progress_bar not in self.active_bars:
-				
 				if self.auto_hide:
 					if self.runtime_threshold == 0.0:
 						self._delayed_show(adjustment, progress_bar)
@@ -124,7 +140,7 @@ class ProgressMonitor(gtk.VBox):
 		adjustment.connect("value-changed", self._on_adjustment_changed, progress_bar)
 		
 		# Add to the window
-		self.pack_start(progress_bar, expand=False, fill=True)
+		self.box.pack_start(progress_bar, expand=False, fill=True)
 		
 		# Show the bar, if appropriate
 		if not self.auto_hide:

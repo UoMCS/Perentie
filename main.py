@@ -12,7 +12,7 @@ from system   import System
 from view.register         import RegisterViewer
 from view.memory           import MemoryViewer
 from view.control_bar      import ControlBar
-from view.progress_monitor import ProgressMonitor
+from view.status_bar       import StatusBar
 from view.log              import LogViewer
 from view.peripherals      import get_peripheral_view
 
@@ -74,14 +74,6 @@ class Main(gtk.Window):
 		self.vpaned.pack1(f1, resize = True, shrink = False)
 		self.vpaned.pack2(f2, resize = True, shrink = False)
 		
-		# Add a progress monitor for long-running background functions
-		self.progress_monitor = ProgressMonitor(self.system)
-		self.progress_monitor.add_adjustment(
-			ControlBar.loader_background_decorator.get_adjustment(self.control_bar),
-			"Loading Memory Image"
-			)
-		self.vbox.pack_start(self.progress_monitor, expand=False, fill=True)
-		
 		# Add an expander with a log viewer in
 		self.unread_log_entries = 0
 		self.log_expander = gtk.Expander("Error Log")
@@ -91,6 +83,15 @@ class Main(gtk.Window):
 		self.log_expander.connect("activate", self._on_log_update, None)
 		self.log_expander.set_use_markup(True)
 		self.vbox.pack_start(self.log_expander, expand = False, fill = True)
+		
+		# Add a status-bar
+		self.status_bar = StatusBar(self.system)
+		self.vbox.pack_start(self.status_bar, fill=True, expand=False)
+		
+		self.status_bar.add_adjustment(
+			ControlBar.loader_background_decorator.get_adjustment(self.control_bar),
+			"Loading Memory Image"
+			)
 		
 		# Get peripherals
 		for periph_num, (periph_id, periph_sub_id) in enumerate(self.system.get_peripheral_ids()):
@@ -120,7 +121,7 @@ class Main(gtk.Window):
 				
 				# Add progress monitors
 				for adjustment, name in periph_widget.get_progress_adjustments():
-					self.progress_monitor.add_adjustment(adjustment, name)
+					self.status_bar.add_adjustment(adjustment, name)
 		
 		# Interval at which to auto refresh the UI's contents
 		glib.timeout_add(Main.REFRESH_INTERVAL, self._on_interval)
@@ -141,6 +142,7 @@ class Main(gtk.Window):
 		for memory_viewer in self.memory_viewers:
 			memory_viewer.refresh()
 		self.control_bar.refresh()
+		self.status_bar.refresh()
 		
 		# Reschedule the interval
 		return True

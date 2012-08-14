@@ -275,6 +275,9 @@ class ControlBar(gtk.Toolbar):
 		if self.system.get_image_filename() is None:
 			return
 		
+		# Start displaying progress
+		yield (0,1)
+		
 		for progress in self.system.load_image_():
 			from time import sleep
 			yield progress

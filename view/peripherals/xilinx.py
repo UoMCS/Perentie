@@ -422,6 +422,9 @@ class Spartan3(gtk.VBox, PeripheralWidget):
 		with self.data_lock:
 			data_length = len(self.data)
 			
+			# Make sure the progress is displayed
+			yield (0, 1)
+			
 			try:
 				for progress in self.system.peripheral_download(self.periph_num, self.data):
 					# Report progress
