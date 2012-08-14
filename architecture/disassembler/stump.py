@@ -59,9 +59,9 @@ class STUMPDisassembler(Disassembler):
 	
 	SHIFTS = {
 		0b00 : "",
-		0b01 : ", asr",
-		0b10 : ", ror",
-		0b11 : ", rrc"
+		0b01 : ", ASR",
+		0b10 : ", ROR",
+		0b11 : ", RRC"
 	}
 	
 	
