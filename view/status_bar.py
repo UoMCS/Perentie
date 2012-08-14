@@ -17,7 +17,7 @@ class StatusBar(gtk.VBox):
 	STATUS_CODES = {
 		-1  : "Communication Error", # STATUS_ERROR
 		0x00: "Reset",               # STATUS_RESET
-		0x01: "Busy",                # STATUS_BUSY
+		0x01: "Device Not Ready",    # STATUS_BUSY
 		0x40: "Stopped",             # STATUS_STOPPED
 		0x41: "Breakpoint",          # STATUS_STOPPED_BREAKPOINT
 		0x42: "Watchpoint",          # STATUS_STOPPED_WATCHPOINT
