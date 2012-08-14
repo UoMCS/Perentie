@@ -102,6 +102,8 @@ class Main(gtk.Window):
 				
 				# Create a window to display the widget
 				periph_window = gtk.Window()
+				periph_window.set_transient_for(self.window)
+				periph_window.set_destroy_with_parent(True)
 				periph_window.add(periph_widget)
 				periph_window.set_title(periph_widget.get_name())
 				periph_window.set_icon(periph_widget.get_icon(gtk.ICON_SIZE_MENU))
