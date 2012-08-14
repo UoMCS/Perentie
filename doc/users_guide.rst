@@ -93,7 +93,9 @@ Python/C-style arithmetic is supported.
 You can access registers from the register banks other than the first bank using
 variables named register_bank_name.register_name.
 
-Memory addresses can be accessed using memory_name[address].
+Memory words can be accessed using memory_name[address]. You can access multiple
+words using memory_name[start:end] (where end is not included) and the words
+will be concatenated together into an int.
 
 The result of an expression will be masked off to fit the register or memory it
 assigned to.

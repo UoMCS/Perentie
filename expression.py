@@ -112,7 +112,7 @@ class EvaluatorMixin(object):
 		
 		
 		def __getitem__(self, start):
-			return self(start)[0]
+			return self(start)
 		
 		
 		def __getslice__(self, start, end):
@@ -131,7 +131,14 @@ class EvaluatorMixin(object):
 			
 			assert(start < end)
 			length = (end - start) / elem_size
-			return self.system.read_memory(self.memory, elem_size, start, length)
+			words = self.system.read_memory(self.memory, elem_size, start, length)
+			
+			# Concatenate the returned words
+			out = 0
+			for word in words[::-1]:
+				out <<= self.memory.word_width_bits
+				out  |= word
+			return out
 	
 	
 	def _add_memory_accessors(self):
