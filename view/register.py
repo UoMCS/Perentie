@@ -66,45 +66,13 @@ class RegisterViewer(gtk.Notebook):
 			register_bank_viewer.refresh()
 	
 	
-	@RunInBackground()
 	def _on_register_edited(self, bank_viewer, register, new_value, register_bank):
 		"""
-		Call-back when a a register in any register bank has been edited.  Write
-		back to the device and re-broadcast the signal including the RegisterBank.
+		Call-back when a a register in any register bank has been edited.
+		Re-broadcast the signal including the RegisterBank.
 		"""
-		self.system.write_register(register, new_value)
-		
-		# Return to GTK thread
-		yield
-		
 		self.refresh()
 		self.emit("edited", register_bank, register, new_value)
-	
-	
-	def set_register(self, register_bank, register, value):
-		"""
-		Set the value of a register in the display given a RegisterBank and Register
-		object.
-		"""
-		# Find the widget for the requested register_bank
-		page_num = self.system.architecture.register_banks.index(register_bank)
-		bank_viewer = self.get_nth_page(page_num)
-		
-		# Set the value
-		bank_viewer.set_register(register, value)
-	
-	
-	def get_register(self, register_bank, register):
-		"""
-		Get the value of a register in the display given a RegisterBank and Register
-		object.
-		"""
-		# Find the widget for the requested register_bank
-		page_num = self.system.architecture.register_banks.index(register_bank)
-		bank_viewer = self.get_nth_page(page_num)
-		
-		# Get the value
-		return bank_viewer.get_register(register)
 
 
 
@@ -234,7 +202,7 @@ class RegisterBankViewer(gtk.VBox):
 		self.refresh()
 	
 	
-	@RunInBackground(start_in_gtk = True)
+	@RunInBackground()
 	def _on_int_register_edited(self, cell_renderer, path, new_value):
 		"""
 		Call-back when an integer register is edited.
@@ -256,15 +224,18 @@ class RegisterBankViewer(gtk.VBox):
 			# ignore it
 			self.system.log(e, True)
 		
-			
-		# Emit the signal (in the GKT thread)
-		yield
-		self.editing_row = None
 		if success:
-			self.emit("edited", register, value)
+			self.system.write_register(register, value)
+			
+			# Emit the signal (in the GKT thread)
+			yield
+			self.editing_row = None
+			if success:
+				self.emit("edited", register, value)
 		
 	
 	
+	@RunInBackground()
 	def _on_bit_register_edited(self, bit_field_viewer, new_value):
 		"""
 		Call-back when an integer register is edited.
@@ -275,8 +246,10 @@ class RegisterBankViewer(gtk.VBox):
 			# don't know how to force it to be one of these but it happens to be a
 			# string here...
 			register = bit_field_viewer.register
+			self.system.write_register(register, new_value)
 			
 			# Emit the signal
+			yield
 			self.emit("edited", register, new_value)
 		except Exception, e:
 			# The user entered a bad value or a comm error occurred during evaluation,
