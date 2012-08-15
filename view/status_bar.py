@@ -74,6 +74,11 @@ class StatusBar(gtk.VBox):
 		self.progress_monitor.add_adjustment(*args, **kwargs)
 	
 	
+	def remove_adjustment(self, *args, **kwargs):
+		# Forward to the progress_monitor
+		self.progress_monitor.remove_adjustment(*args, **kwargs)
+	
+	
 	@RunInBackground()
 	def refresh(self):
 		status, steps_remaining, steps_since_reset = self.system.get_status()
@@ -86,4 +91,13 @@ class StatusBar(gtk.VBox):
 			"s" if steps_since_reset != 1 else "",
 			(" (%s Remaining)"%steps_remaining if steps_remaining > 0 else "")
 		))
+	
+	
+	def architecture_changed(self):
+		"""
+		Called when the architecture changes, deals with all the
+		architecture-specific changes which need to be made to the GUI.
+		"""
+		# Nothing to do!
+		self.refresh()
 

@@ -9,15 +9,12 @@ from subprocess import Popen, PIPE
 
 from base import BackEnd
 
-# XXX
-from time import sleep
-
 class EmulatorBackEnd(BackEnd):
 	
 	def __init__(self, args):
 		"""
 		Starts the emulator specified in args as a sub-process. Args should be a
-		list of the form ["executable_name", "arg1", "arg2", "etc"].
+		valid shell command string.
 		"""
 		BackEnd.__init__(self)
 		
@@ -28,7 +25,8 @@ class EmulatorBackEnd(BackEnd):
 		                      bufsize = -1,   # Produce a fully-buffered set of pipes
 		                      stdin   = PIPE, # Source stdin from the protocol
 		                      stdout  = PIPE, # Supply stdout to the protocol
-		                      stderr  = None) # Stderr should not be redirected
+		                      stderr  = None, # Stderr should not be redirected
+		                      shell   = True) # Execute in a shell
 	
 	
 	def read(self, length):
@@ -41,3 +39,9 @@ class EmulatorBackEnd(BackEnd):
 	
 	def flush(self):
 		self.emulator.stdin.flush()
+	
+	
+	def close(self):
+		self.emulator.stdin.close()
+		self.emulator.stdout.close()
+		self.emulator.kill()

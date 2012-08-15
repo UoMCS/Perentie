@@ -61,6 +61,10 @@ class ProgressMonitor(gtk.HBox):
 		self.orientation       = orientation
 		self.runtime_threshold = runtime_threshold
 		
+		# A mapping from adjustments to (progress_bar, chg_handler_id,
+		# val_handler_id)
+		self.adjustments = {}
+		
 		# The set of active progress bars
 		self.active_bars = set()
 		
@@ -129,6 +133,8 @@ class ProgressMonitor(gtk.HBox):
 	
 	
 	def add_adjustment(self, adjustment, name = None):
+		assert(adjustment not in self.adjustments)
+		
 		progress_bar = gtk.ProgressBar()
 		
 		# Add the name (if given)
@@ -136,8 +142,11 @@ class ProgressMonitor(gtk.HBox):
 			progress_bar.set_text(name)
 		
 		# Add the events to update the bar when the adjustment changes
-		adjustment.connect("changed", self._on_adjustment_changed, progress_bar)
-		adjustment.connect("value-changed", self._on_adjustment_changed, progress_bar)
+		chg_handler_id = adjustment.connect("changed", self._on_adjustment_changed, progress_bar)
+		val_handler_id = adjustment.connect("value-changed", self._on_adjustment_changed, progress_bar)
+		
+		# Add the adjustment to the mapping
+		self.adjustments[adjustment] = (progress_bar, chg_handler_id, val_handler_id)
 		
 		# Add to the window
 		self.box.pack_start(progress_bar, expand=False, fill=True)
@@ -148,4 +157,16 @@ class ProgressMonitor(gtk.HBox):
 		else:
 			progress_bar.hide()
 			progress_bar.set_no_show_all(True)
+	
+	
+	def remove_adjustment(self, adjustment):
+		progress_bar, chg_handler_id, val_handler_id = self.adjustments[adjustment]
+		
+		# Disconnect signals
+		adjustment.disconnect(chg_handler_id)
+		adjustment.disconnect(val_handler_id)
+		
+		# Delete the progress bar
+		self.box.remove(progress_bar)
+		progress_bar.destroy()
 

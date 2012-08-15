@@ -37,4 +37,8 @@ class SerialPortBackEnd(BackEnd):
 	
 	def flush(self):
 		self.serial.flush()
+	
+	
+	def close(self):
+		self.serial.close()
 

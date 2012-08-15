@@ -33,28 +33,22 @@ class RegisterViewer(gtk.Notebook):
 		# Tabs on the left
 		self.set_tab_pos(gtk.POS_LEFT)
 		
-		# Only show the tabs if there's more than one
-		self.set_show_tabs(len(self.system.architecture.register_banks) > 1)
-		
-		# Add pages for each register bank
-		for register_bank in self.system.architecture.register_banks:
-			label       = gtk.Label(register_bank.name)
-			bank_viewer = RegisterBankViewer(self.system, register_bank)
-			self.append_page(bank_viewer, label)
-			
-			# Connect to the edited signal for every register bank
-			bank_viewer.connect("edited", self._on_register_edited, register_bank)
-			
-			label.show()
-			bank_viewer.show()
-		
 		self.connect("switch-page", self._on_page_change)
 		
-		self.refresh()
+		self.architecture_changed()
 	
 	
 	def _on_page_change(self, notebook, page, page_num):
 		self.refresh()
+	
+	
+	def _on_register_edited(self, bank_viewer, register, new_value, register_bank):
+		"""
+		Call-back when a a register in any register bank has been edited.
+		Re-broadcast the signal including the RegisterBank.
+		"""
+		self.refresh()
+		self.emit("edited", register_bank, register, new_value)
 	
 	
 	def refresh(self):
@@ -66,13 +60,38 @@ class RegisterViewer(gtk.Notebook):
 			register_bank_viewer.refresh()
 	
 	
-	def _on_register_edited(self, bank_viewer, register, new_value, register_bank):
+	def architecture_changed(self):
 		"""
-		Call-back when a a register in any register bank has been edited.
-		Re-broadcast the signal including the RegisterBank.
+		Called when the architecture changes, deals with all the
+		architecture-specific changes which need to be made to the GUI.
 		"""
+		# Remove all existing pages
+		while self.get_n_pages():
+			widget = self.get_nth_page(0)
+			self.remove_page(0)
+			widget.destroy()
+		
+		# Create new pages for the architecture
+		if self.system.architecture is not None:
+			# Only show the tabs if there's more than one
+			self.set_show_tabs(len(self.system.architecture.register_banks) > 1)
+			
+			# Add pages for each register bank
+			for register_bank in self.system.architecture.register_banks:
+				label       = gtk.Label(register_bank.name)
+				bank_viewer = RegisterBankViewer(self.system, register_bank)
+				self.append_page(bank_viewer, label)
+				
+				# Connect to the edited signal for every register bank
+				bank_viewer.connect("edited", self._on_register_edited, register_bank)
+				
+				label.show()
+				bank_viewer.show()
+		else:
+			# No architecture, no tabs, no contents...
+			self.set_show_tabs(False)
+		
 		self.refresh()
-		self.emit("edited", register_bank, register, new_value)
 
 
 

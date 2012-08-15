@@ -46,3 +46,5 @@ class PeripheralWidget(object):
 		want their progress displayed.
 		"""
 		return []
+	
+	

@@ -67,6 +67,11 @@ class DeviceMixin(object):
 		self.kill_device_lock = Lock()
 		self.kill_device      = False
 		
+		# The board definition which is currently in use by the system
+		self.board_changed_lock = Lock()
+		self.cur_board_definition = None
+		self.old_board_definition = None
+		
 		self.clear_cache()
 	
 	
@@ -103,10 +108,6 @@ class DeviceMixin(object):
 		an exception.
 		
 		Warning: this method is not thread safe!
-		
-		XXX This function should check if the board connected has changed after
-		having to resynchronise. If it has, currently wierdness will occur and go
-		undetected. This should be fixed.
 		"""
 		try:
 			# Try pinging the device
@@ -125,6 +126,42 @@ class DeviceMixin(object):
 			self.back_end.ping()
 	
 	
+	def _get_board_definition(self):
+		"""
+		Get the board definition. An internal-use-only wrapper which stores the
+		baord definition if it hasn't been before.
+		
+		Warning: this method is not thread safe!
+		"""
+		board_def = self.back_end.get_board_definition()
+		with self.board_changed_lock:
+			if self.old_board_definition is None:
+				self.old_board_definition = board_def
+			self.cur_board_definition = board_def
+		return board_def
+	
+	
+	def get_board_definition_changed(self):
+		"""
+		Check whether the board definition has changed. Clears the flag.
+		"""
+		# Call something which causes the board definition to be fetched
+		self.get_cpu_type()
+		
+		# Check if it changed
+		changed = False
+		with self.board_changed_lock:
+			if self.old_board_definition is not None:
+				changed = self.old_board_definition != self.cur_board_definition
+			
+			# Clear the flag if its been changed
+			if changed:
+				self.old_board_definition = None
+				self.cur_board_definition = None
+		
+		return changed
+	
+	
 	def get_cpu_type(self):
 		"""
 		Get the processor (type, sub_type). If there is an error, returns (-1,-1)
@@ -134,7 +171,7 @@ class DeviceMixin(object):
 			
 			try:
 				self.resync()
-				cpu_type, _, _ = self.back_end.get_board_definition()
+				cpu_type, _, _ = self._get_board_definition()
 				return cpu_type
 			except BackEndError, e:
 				self.log(e)
@@ -150,7 +187,7 @@ class DeviceMixin(object):
 			
 			try:
 				self.resync()
-				_, peripheral_ids, _ = self.back_end.get_board_definition()
+				_, peripheral_ids, _ = self._get_board_definition()
 				return peripheral_ids
 			except BackEndError, e:
 				self.log(e)

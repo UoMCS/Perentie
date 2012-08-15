@@ -13,9 +13,14 @@ from background import RunInBackground
 class ControlBar(gtk.VBox):
 	
 	__gsignals__ = {
+		# Emitted when something which might change the global state occurs
+		# indicating a global refresh would be a good idea.
+		"device-state-changed": (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, tuple()),
+		
+		# Actions which are to be carried out by the MainWindow
 		"auto-refresh-toggled": (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, tuple()),
 		"select-target-clicked": (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, tuple()),
-		"redetect-clicked": (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, tuple()),
+		"refresh-clicked": (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, tuple()),
 		"quit-clicked": (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, tuple()),
 		"new-memory-viewer-clicked": (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, tuple()),
 		"new-register-viewer-clicked": (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, tuple()),
@@ -32,9 +37,8 @@ class ControlBar(gtk.VBox):
 		# A list of widgets which are disabled when the processor is busy
 		self.disabled_on_busy = []
 		
-		# Flag indicating that some peripherals have been added (used to draw a
-		# separator when needed.
-		self.periphs_added = False
+		# Maps a peripheral widget to a tuple (tool_item, menu_item)
+		self.periphs = {}
 		
 		# Add the menubar
 		self.menubar = gtk.MenuBar()
@@ -60,7 +64,7 @@ class ControlBar(gtk.VBox):
 			None,
 			("Device Info",    gtk.STOCK_INFO,        self._on_info_clicked),
 			None,
-			("Refresh Now",    gtk.STOCK_REFRESH,     self._on_redetect_clicked),
+			("Refresh Now",    gtk.STOCK_REFRESH,     self._on_refresh_clicked),
 			self.auto_refresh_button,
 			None,
 			("Quit",           gtk.STOCK_QUIT,        self._on_quit_clicked),
@@ -111,6 +115,14 @@ class ControlBar(gtk.VBox):
 		window_menu = self._make_menu_item("Window")
 		window_menu.set_submenu(window_submenu)
 		self.menubar.append(window_menu)
+		
+		# The separator before the peripherals
+		self.periph_submenu = gtk.Menu()
+		self.periph_menu = self._make_menu_item("Peripherals")
+		self.periph_menu.set_submenu(self.periph_submenu)
+		self.periph_menu.set_no_show_all(True)
+		self.periph_menu.hide()
+		self.menubar.append(self.periph_menu)
 	
 	
 	def _init_toolbar(self):
@@ -163,6 +175,12 @@ class ControlBar(gtk.VBox):
 		# Show text and icons
 		self.toolbar.set_style(gtk.TOOLBAR_BOTH)
 		
+		# The separator before the peripherals
+		self.periph_sep = self._add_separator()
+		self.periph_sep.set_no_show_all(True)
+		self.periph_sep.hide()
+		
+		# Make all buttons homogeneous
 		for tool in self.toolbar:
 			tool.set_homogeneous(True)
 	
@@ -302,39 +320,60 @@ class ControlBar(gtk.VBox):
 		sep = gtk.SeparatorToolItem()
 		self.toolbar.insert(sep, -1)
 		sep.show()
+		return sep
 	
 	
-	def add_peripheral(self, peripheral, callback):
+	def add_periph(self, periph_widget, callback):
 		"""
 		Add a button for the given peripheral widget with the click event connected
 		to the provided callback.
 		"""
-		if not self.periphs_added:
-			self._add_separator()
-			self.periphs_added = True
-			
-			self.peripheral_submenu = gtk.Menu()
-			peripheral_menu = self._make_menu_item("Peripherals")
-			peripheral_menu.set_submenu(self.peripheral_submenu)
-			self.menubar.append(peripheral_menu)
+		self.periph_sep.show()
+		self.periph_menu.show()
 		
 		# Add to toolbar
 		icon = gtk.Image()
-		icon.set_from_pixbuf(peripheral.get_icon(gtk.ICON_SIZE_LARGE_TOOLBAR))
+		icon.set_from_pixbuf(periph_widget.get_icon(gtk.ICON_SIZE_LARGE_TOOLBAR))
 		icon.show()
-		self._add_button(peripheral.get_short_name(),
-		                 None, callback,
-		                 peripheral.get_name(),
-		                 icon = icon)
+		tool_item = self._add_button(periph_widget.get_short_name(),
+		                             None, callback,
+		                             periph_widget.get_name(),
+		                             icon = icon)
 		
 		# Add to menubar
 		icon = gtk.Image()
-		icon.set_from_pixbuf(peripheral.get_icon(gtk.ICON_SIZE_MENU))
+		icon.set_from_pixbuf(periph_widget.get_icon(gtk.ICON_SIZE_MENU))
 		icon.show()
-		menu_item = self._make_menu_item(peripheral.get_short_name(),
+		menu_item = self._make_menu_item(periph_widget.get_name(),
 		                                 icon = icon)
 		menu_item.connect("activate", callback)
-		self.peripheral_submenu.append(menu_item)
+		menu_item.show()
+		self.periph_submenu.append(menu_item)
+		
+		# Store a refrence to the toolbar and menu items
+		assert(periph_widget not in self.periphs)
+		self.periphs[periph_widget] = (tool_item, menu_item)
+	
+	
+	def remove_periph(self, periph_widget):
+		"""
+		Remove the given periph_widget's menu/toolbar entries
+		"""
+		tool_item, menu_item = self.periphs[periph_widget]
+		del self.periphs[periph_widget]
+		
+		# Remove the toolbar item
+		self.toolbar.remove(tool_item)
+		tool_item.destroy()
+		
+		# Remove the menu item
+		self.periph_submenu.remove(menu_item)
+		menu_item.destroy()
+		
+		# If that was the last periph, hide the seperators/menus
+		if not self.periphs:
+			self.periph_sep.hide()
+			self.periph_menu.hide()
 	
 	
 	@RunInBackground()
@@ -344,7 +383,7 @@ class ControlBar(gtk.VBox):
 		# Return to GTK thread
 		yield
 		
-		self.refresh()
+		self.emit("device-state-changed")
 	
 	
 	def _on_assemble_clicked(self, btn):
@@ -365,7 +404,7 @@ class ControlBar(gtk.VBox):
 			return
 		
 		self.system.assemble()
-		self.refresh()
+		self.emit("device-state-changed")
 	
 	
 	def _on_select_source_file_clicked(self, btn):
@@ -413,7 +452,7 @@ class ControlBar(gtk.VBox):
 		# Return to the GTK thread
 		yield
 		
-		self.refresh()
+		self.emit("device-state-changed")
 	
 	
 	def _on_select_image_file_clicked(self, btn):
@@ -454,7 +493,7 @@ class ControlBar(gtk.VBox):
 		# Return to GTK thread
 		yield
 		
-		self.refresh()
+		self.emit("device-state-changed")
 	
 	
 	@RunInBackground()
@@ -467,7 +506,7 @@ class ControlBar(gtk.VBox):
 		# Return to GTK thread
 		yield
 		
-		self.refresh()
+		self.emit("device-state-changed")
 	
 	
 	@RunInBackground()
@@ -480,7 +519,7 @@ class ControlBar(gtk.VBox):
 		# Return to GTK thread
 		yield
 		
-		self.refresh()
+		self.emit("device-state-changed")
 	
 	
 	@RunInBackground(start_in_gtk = True)
@@ -499,7 +538,7 @@ class ControlBar(gtk.VBox):
 		# Return to GTK thread
 		yield
 		
-		self.refresh()
+		self.emit("device-state-changed")
 	
 	
 	@RunInBackground()
@@ -519,7 +558,7 @@ class ControlBar(gtk.VBox):
 		# Return to GTK thread
 		yield
 		
-		self.refresh()
+		self.emit("device-state-changed")
 	
 	
 	def _on_multi_step_changed(self, btn):
@@ -536,46 +575,71 @@ class ControlBar(gtk.VBox):
 	
 	def _on_info_clicked(self, btn):
 		info_string  = ""
-		info_string += "<b>Architecture</b>: %s (<i>%02X/%04X</i>)\n\n"%(
-			self.system.architecture.name,
-			self.system.architecture.cpu_type,
-			self.system.architecture.cpu_subtype,
-		)
+		info_string += "<b>Architecture</b>:\n"
+		info_string += "  %s\n"%(
+			self.system.architecture.name
+			if self.system.architecture is not None
+			else "<i>(Unknown)</i>")
+		info_string += "  ID/Sub-ID: %02X/%04X)\n"%(
+			self.system.cpu_type,
+			self.system.cpu_subtype)
+		info_string += "  Target Type: %s\n"%self.system.back_end.name
+		info_string += "\n"
 		
 		info_string += "<b>Register Banks:</b>\n"
-		for register_bank in self.system.architecture.register_banks:
-			info_string += "  %s (aka <i>%s</i>):\n"%(
-				register_bank.name,
-				", ".join(register_bank.names[1:]),
-			)
-			for register in register_bank.registers:
-				info_string += "    %d-bit %s Register %s (aka <i>%s</i>)\n"%(
-					register.width_bits,
-					"Integer" if register.bit_field is None else "Bit-Field",
-					register.name,
-					", ".join(register.names[1:]),
+		if self.system.architecture is not None:
+			for register_bank in self.system.architecture.register_banks:
+				info_string += "  %s (aka <i>%s</i>):\n"%(
+					register_bank.name,
+					", ".join(register_bank.names[1:]),
 				)
+				for register in register_bank.registers:
+					info_string += "    %d-bit %s Register %s (aka <i>%s</i>)\n"%(
+						register.width_bits,
+						"Integer" if register.bit_field is None else "Bit-Field",
+						register.name,
+						", ".join(register.names[1:]),
+					)
+		else:
+			info_string += "  <i>(Unknown)</i>\n"
 		info_string += "\n"
 		
 		info_string += "<b>Memories:</b>\n"
-		for memory in self.system.architecture.memories:
-			info_string += "  %s (aka <i>%s</i>):\n"%(
-				memory.name, ", ".join(memory.names[1:]),)
-			info_string += "    %d-bit addresses\n"%(memory.addr_width_bits)
-			info_string += "    %d-bit minmum-addressable blocks\n"%(memory.word_width_bits)
-			info_string += "    %d blocks (%d bytes)\n"%(
-				memory.size, (memory.word_width_bits * memory.size)/8)
+		if self.system.architecture is not None:
+			for memory in self.system.architecture.memories:
+				info_string += "  %s (aka <i>%s</i>):\n"%(
+					memory.name, ", ".join(memory.names[1:]),)
+				info_string += "    %d-bit addresses\n"%(memory.addr_width_bits)
+				info_string += "    %d-bit minmum-addressable blocks\n"%(memory.word_width_bits)
+				info_string += "    %d blocks (%d bytes)\n"%(
+					memory.size, (memory.word_width_bits * memory.size)/8)
+		else:
+			info_string += "  <i>(Unknown)</i>\n"
+		info_string += "\n"
+		
+		info_string += "<b>Peripherals:</b>\n"
+		if self.periphs:
+			for periph_widget in self.periphs:
+				info_string += "  %s (%s):\n"%(
+					periph_widget.get_short_name(),
+					periph_widget.get_name())
+				info_string += "    Number: %d\n"%(periph_widget.periph_num)
+				info_string += "    ID/Sub-ID: %02X/%04X\n"%(
+					periph_widget.periph_id, periph_widget.periph_sub_id)
+		else:
+			info_string += "  <i>(None)</i>\n"
 		
 		info_dialog = gtk.MessageDialog(buttons = gtk.BUTTONS_OK)
 		info_dialog.set_title("Device Info")
 		info_dialog.set_markup(info_string)
+		info_dialog.set_destroy_with_parent(True)
 		
 		info_dialog.run()
 		info_dialog.destroy()
 	
 	
-	def _on_redetect_clicked(self, btn):
-		self.emit("redetect-clicked")
+	def _on_refresh_clicked(self, btn):
+		self.emit("refresh-clicked")
 	
 	
 	def _on_quit_clicked(self, btn):
@@ -638,3 +702,12 @@ class ControlBar(gtk.VBox):
 	def refresh(self):
 		self._refresh_pause_btn()
 		self._refresh_busy()
+	
+	
+	def architecture_changed(self):
+		"""
+		Called when the architecture changes, deals with all the
+		architecture-specific changes which need to be made to the GUI.
+		"""
+		# Nothing to do! The peripheral buttons are updated externally.
+		self.refresh()

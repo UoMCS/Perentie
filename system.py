@@ -20,7 +20,7 @@ EvaluatorMixin: Allows arithmetic expressions to be evaluated in the context of
 the system.
 """
 
-from architecture import get_architecture
+from architecture import get_architecture, UnknownArchitecture
 
 from logger           import LoggerMixin
 from device           import DeviceMixin
@@ -48,14 +48,30 @@ class System(LoggerMixin,
 		DeviceMixin.__init__(self)
 		AssemblerLoaderMixin.__init__(self)
 		AnnotatorMixin.__init__(self)
+		EvaluatorMixin.__init__(self)
 		
-		self.back_end = back_end
-		self.name     = name
+		self.back_end     = back_end
+		self.name         = name
+		self.architecture = None
 		
+		self.init_evaluator()
+		self.update_architecture()
+	
+	
+	def update_architecture(self):
+		"""
+		Update the architecture used by the system
+		"""
 		# Detect the board's architecture
-		# TODO: Do something if the arch is -1 (error during detection)
-		self.cpu_type, self.cpu_sub_type = self.get_cpu_type()
-		self.architecture = get_architecture(self.cpu_type, self.cpu_sub_type)
-		
-		EvaluatorMixin.__init__(self) # Must come once the architecture is set up
+		self.cpu_type, self.cpu_subtype = self.get_cpu_type()
+		if self.cpu_type != -1 and self.cpu_subtype != -1:
+			try:
+				self.architecture = get_architecture(self.cpu_type, self.cpu_subtype)
+			except UnknownArchitecture:
+				self.architecture = None
+			
+			# Update the evaluator's view of the system
+			self.init_evaluator()
+		else:
+			raise Exception("System did not respond.")
 

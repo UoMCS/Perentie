@@ -43,10 +43,18 @@ class EvaluatorMixin(object):
 	"""
 	
 	def __init__(self):
-		"""
-		Pre-generate static lists of allowed values.
-		"""
+		# Don't allow any globals in
+		self.evaluator_global_vars = {"__builtins__" : None}
 		
+		# Allow a specific set of locals
+		self.evaluator_local_vars = {}
+	
+	
+	def init_evaluator(self):
+		"""
+		Set-up the evaluator with the current system architecture.  Pre-generate
+		static lists of allowed values.
+		"""
 		# Don't allow any globals in
 		self.evaluator_global_vars = {"__builtins__" : None}
 		
@@ -142,6 +150,9 @@ class EvaluatorMixin(object):
 	
 	
 	def _add_memory_accessors(self):
+		if self.architecture is None:
+			return
+		
 		for memory in self.architecture.memories:
 			accessor = EvaluatorMixin.MemoryAccessor(self, memory)
 			for name in memory.names:
@@ -152,6 +163,9 @@ class EvaluatorMixin(object):
 		"""
 		Add register accessors to the local_vars dictionary.
 		"""
+		if self.architecture is None:
+			return
+		
 		# Add variables for each register in the system
 		for num, register_bank in enumerate(self.architecture.register_banks):
 			# Create a set of accessor objects for each register

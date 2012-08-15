@@ -74,3 +74,12 @@ class LogViewer(gtk.ScrolledWindow):
 				self.list_store.set_value(it, 1, 400)
 				return False
 			glib.timeout_add_seconds(LogViewer.HIGHLIGHT_TIMEOUT, remove_highlight)
+	
+	
+	def architecture_changed(self):
+		"""
+		Called when the architecture changes, deals with all the
+		architecture-specific changes which need to be made to the GUI.
+		"""
+		# Nothing to do!
+		pass

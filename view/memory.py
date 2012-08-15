@@ -57,19 +57,7 @@ class MemoryViewer(gtk.Notebook):
 		self.system           = system
 		self.show_disassembly = show_disassembly
 		
-		# Only show the tabs if there's more than memory
-		self.set_show_tabs(len(self.system.architecture.memories) > 1)
-		
-		for memory in self.system.architecture.memories:
-			label  = gtk.Label(memory.name)
-			viewer = SingleMemoryViewer(self.system, memory, self.show_disassembly)
-			self.append_page(viewer, label)
-			
-			# Connect to the edited signal for every register bank
-			viewer.connect("edited", self._on_edited)
-			
-			label.show()
-			viewer.show()
+		self.architecture_changed()
 	
 	
 	def _on_edited(self, single_memory_viewer):
@@ -87,6 +75,39 @@ class MemoryViewer(gtk.Notebook):
 		viewer = self.get_nth_page(self.get_current_page())
 		if viewer is not None:
 			viewer.refresh()
+	
+	
+	def architecture_changed(self):
+		"""
+		Called when the architecture changes, deals with all the
+		architecture-specific changes which need to be made to the GUI.
+		"""
+		# Remove all existing memory viewers
+		while self.get_n_pages():
+			widget = self.get_nth_page(0)
+			self.remove_page(0)
+			widget.destroy()
+		
+		# Create new pages for the architecture
+		if self.system.architecture is not None:
+			# Only show the tabs if there's more than memory
+			self.set_show_tabs(len(self.system.architecture.memories) > 1)
+			
+			for memory in self.system.architecture.memories:
+				label  = gtk.Label(memory.name)
+				viewer = SingleMemoryViewer(self.system, memory, self.show_disassembly)
+				self.append_page(viewer, label)
+				
+				# Connect to the edited signal for every register bank
+				viewer.connect("edited", self._on_edited)
+				
+				label.show()
+				viewer.show()
+		else:
+			# No architecture, no tabs, no contents...
+			self.set_show_tabs(False)
+		
+		self.refresh()
 
 
 

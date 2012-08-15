@@ -118,6 +118,13 @@ class BackEnd(object):
 		raise NotImplementedError("BackEnd must implement flush")
 	
 	
+	def close(self):
+		"""
+		Close the pipe and kill the back-end.
+		"""
+		raise NotImplementedError("BackEnd must implement close!")
+	
+	
 	def read_exactly(self, length):
 		"""
 		Read the exactly specified number of bytes from the device. Raises exception

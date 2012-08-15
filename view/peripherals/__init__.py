@@ -54,5 +54,5 @@ def get_peripheral_view(periph_id, periph_sub_id):
 			return PERIPHERALS[key]
 	
 	# Not found
-	return None
+	return (None, None)
 
