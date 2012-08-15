@@ -13,7 +13,7 @@ from mu0   import MU0
 ARCHITECTURES = {
 	1: ARM,
 	# 2: MIPS, # Not implemented
-	#3: STUMP,
+	3: STUMP,
 	4: MU0,
 }
 
