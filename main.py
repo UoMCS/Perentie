@@ -59,20 +59,13 @@ class Main(gtk.Window):
 		self.hpaned.pack2(self.vpaned, shrink = False)
 		
 		# Add two memory viewers (one defaulting to a disassembly, one not)
-		memory = self.system.architecture.memories[0]
 		self.memory_viewers = []
-		self.memory_viewers.append(MemoryViewer(self.system, memory, True))
-		self.memory_viewers.append(MemoryViewer(self.system, memory, False))
+		self.memory_viewers.append(MemoryViewer(self.system, True))
+		self.memory_viewers.append(MemoryViewer(self.system, False))
 		
 		# Show memory viewers in frames
-		f1 = gtk.Frame()
-		f2 = gtk.Frame()
-		f1.add(self.memory_viewers[0])
-		f2.add(self.memory_viewers[1])
-		f1.set_shadow_type(gtk.SHADOW_OUT)
-		f2.set_shadow_type(gtk.SHADOW_OUT)
-		self.vpaned.pack1(f1, resize = True, shrink = False)
-		self.vpaned.pack2(f2, resize = True, shrink = False)
+		self.vpaned.pack1(self.memory_viewers[0], resize = True, shrink = False)
+		self.vpaned.pack2(self.memory_viewers[1], resize = True, shrink = False)
 		
 		# Add an expander with a log viewer in
 		self.unread_log_entries = 0

@@ -36,7 +36,61 @@ def xxx_allowed_element_sizes(word_bits):
 	return out
 
 
-class MemoryViewer(gtk.VBox):
+class MemoryViewer(gtk.Notebook):
+	
+	__gsignals__ = {
+		# Emitted when the memory viewer has made a modification to memory
+		'edited': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, tuple()),
+	}
+	
+	def __init__(self, system, show_disassembly = True):
+		"""
+		Display a memory viewer with a tab for each memory.
+		
+		If show_disassembly is True, the initial memory table will be a disassembly,
+		otherwise it will be a single-CPU-word memory table and failing that, a
+		single memory word.
+		"""
+		
+		gtk.Notebook.__init__(self)
+		
+		self.system           = system
+		self.show_disassembly = show_disassembly
+		
+		# Only show the tabs if there's more than memory
+		self.set_show_tabs(len(self.system.architecture.memories) > 1)
+		
+		for memory in self.system.architecture.memories:
+			label  = gtk.Label(memory.name)
+			viewer = SingleMemoryViewer(self.system, memory, self.show_disassembly)
+			self.append_page(viewer, label)
+			
+			# Connect to the edited signal for every register bank
+			viewer.connect("edited", self._on_edited)
+			
+			label.show()
+			viewer.show()
+	
+	
+	def _on_edited(self, single_memory_viewer):
+		"""
+		Callback when one of the memories is edited.
+		"""
+		self.refresh()
+		self.emit("edited")
+	
+	
+	def refresh(self):
+		"""
+		Update the view of the current single memory viewer.
+		"""
+		viewer = self.get_nth_page(self.get_current_page())
+		if viewer is not None:
+			viewer.refresh()
+
+
+
+class SingleMemoryViewer(gtk.VBox):
 	
 	__gsignals__ = {
 		# Emitted when the memory viewer has made a modification to memory
