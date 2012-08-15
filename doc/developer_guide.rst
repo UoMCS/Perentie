@@ -60,11 +60,10 @@ Architecture Definition
 All code relating to the system architecture definitions is contained in the
 architecture package (contained within the directory of the same name).
 
-An architecture is assumed to consist of a series of banks of registers, a
-series of memories and a set of peripherals (known in the KMD parlance as
-features). Registers and memories can have arbitrary word sizes. Registers may
-further be described in terms of a bit-field and memories have an associated
-address width, total size and disassembler.
+An architecture is assumed to consist of a series of banks of registers and a
+series of memories. Registers and memories can have arbitrary word sizes.
+Registers may further be described in terms of a bit-field and memories have an
+associated address width, total size and disassembler.
 
 Processor architectures are defined as a python class inheriting from the base
 class Architecture in base.py. This class has various properties which must be
@@ -187,13 +186,32 @@ GUI + Glue
 
 The GUI is defined in terms of a number of specialised widgets which are defined
 in the view package (in the directory of the same name). These widgets provide
-complex UI elements such as memory viewers and control bars. These widgets are
-finally instantiated in a main window in main.py. In the future this should be
-made into a more flexible system where the UI is easily configured by the user
-rather than just being a fixed layout.
+complex UI elements such as memory viewers and control bars.
+
+The GUI starts with a target selection window (TargetSelection in
+target_selection.py). This window allows the user to select a type of target,
+i.e. the connection type of device to connect to for example, a serial device or
+emulator. These options may be specified on the command-line instead of the GUI.
+
+Once a target has been selected, a suitable BackEnd is created according to the
+target chosen. The BackEnd is then passed to a System object which tests to see
+if the device is responding. If all that succeeds, a MainWindow
+(view/main_window.py) is created and passed the System object and the
+TargetSelection window hidden.
+
+The MainWindow is responsible for all user interaction with the system. If the
+MainWindow emits "change-target", the MainWindow, System and BackEnd are
+destroyed and the TargetSelection window is re-shown allowing the user to
+re-select a target.
+
+The MainWindow has a method, _on_interval, which is responsible for all periodic
+jobs such as polling for new display data and checking that the architecture
+hasn't changed.
 
 Conventions
 ```````````
+
+The UI should *never* block.
 
 Numbers should be described in the same format that would be accepted by the
 expression evaluator. An unfortunate side-effect of this is that hex and binary
@@ -215,6 +233,17 @@ are very useful (as GTK's only real table-style viewer) but are a bit abstract.
 It is well-worth taking a look at the PyGTK manual and a good number of examples
 before you start working with them.
 
+Peripherals
+```````````
+
+Peripherals (known in the KMD parlance as features) are supported by creating
+widgets extending PeripheralWidget (view/peripherals/base.py) and adding it to
+the list in view/peripherals/__init__.py. These widgets are instanciated by the
+MainWindow into stand-alone Windows which are shown by the various buttons
+around the UI and hidden when closed.
+
+Note: This means that a peripherals may have code running in the background even
+while the widget is hidden. Handy!
 
 Widgets
 ```````
@@ -227,13 +256,18 @@ interaction close together.
 Widgets should provide a refresh method which will cause the widget to
 re-request any data it is displaying from the system.
 
+Widgets should also provide an architecture_changed method which can be called
+when the architecture in the system changes. The widget must then update to
+reflect the change.
+
 The main widgets which have been defined so far are described below.
 
 ControlBar
 ~~~~~~~~~~
-The ControlBar (view/control_bar.py) provides a GTK ToolBar which features
-buttons for controlling the code assembly, memory loading and  execution of the
-device.
+The ControlBar (view/control_bar.py) provides a GTK ToolBar and menu bar which
+features buttons for controlling the code assembly, memory loading and
+execution of the device. It can have peripheral buttons added and removed as
+required.
 
 LogViewer
 ~~~~~~~~~
@@ -254,7 +288,8 @@ Memory Viewer
 ~~~~~~~~~~~~~
 The memory viewer provides a way to view and modify the contents of a memory in
 the system. This is probably the most complex and also most messy widget in the
-system. The viewer features a toolbar with an address box (which accepts
+system. The viewer contains a tab for each memory (tabs are hidden if there is
+only one memory) and features a toolbar with an address box (which accepts
 expressions) which is used to change the address being viewed. The follow
 check-box allows the window to follow the result of the expression as its result
 changes (for example if the expression contains a register's value). The viewer
@@ -276,7 +311,8 @@ view and provide functions for requesting and setting the values of these
 columns. The interface required of a MemoryTable is described by the MemoryTable
 base class.
 
-To deal with the special-case of variable-length instruction-set compilers,
+To deal with the special-case of variable-length instruand, if that
+succeeds, ction-set compilers,
 data is requested from MemoryTables in terms of the number of rows required to
 fill the screen rather than a given range of memory. This allows each row to
 have different lengths when variable length instructions are used.

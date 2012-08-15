@@ -82,6 +82,10 @@ class RegisterViewer(gtk.Notebook):
 				bank_viewer = RegisterBankViewer(self.system, register_bank)
 				self.append_page(bank_viewer, label)
 				
+				# Tooltip shows alternative names
+				label.set_tooltip_text("In expressions: %s"%(
+					", ".join(register_bank.names)))
+				
 				# Connect to the edited signal for every register bank
 				bank_viewer.connect("edited", self._on_register_edited, register_bank)
 				
@@ -134,11 +138,14 @@ class RegisterBankViewer(gtk.VBox):
 		"""
 		Add the integer register viewer
 		"""
-		# The list model
-		self.register_list_model = gtk.ListStore(str, str, str)
+		# The list model (reg_name, value, ascii, tooltip)
+		self.register_list_model = gtk.ListStore(str, str, str, str)
 		
 		# A tree view is used to display the integer registers
 		self.register_list = gtk.TreeView(self.register_list_model)
+		
+		# Set tooltips
+		self.register_list.set_tooltip_column(3)
 		
 		# Don't show a search box when typing into the register list window
 		self.register_list.set_enable_search(False)
@@ -174,7 +181,16 @@ class RegisterBankViewer(gtk.VBox):
 		
 		# Add the registers to the list (initially empty values)
 		for register in self.int_registers:
-			self.register_list_model.append((register.name, "", ""))
+			# Tooltip shows names as used in expressions
+			# Register names must be prefixed if this the first register bank
+			if self.system.architecture.register_banks.index(self.register_bank) == 0:
+				prefix = ""
+			else:
+				prefix = "%s."%(self.register_bank.name)
+			tooltip = "In expressions: %s"%(
+				", ".join("%s%s"%(prefix, name) for name in register.names))
+			
+			self.register_list_model.append((register.name, "", "", tooltip))
 		
 		self.pack_start(self.register_list, expand = True, fill = True)
 		self.register_list.show()

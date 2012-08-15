@@ -98,6 +98,10 @@ class MemoryViewer(gtk.Notebook):
 				viewer = SingleMemoryViewer(self.system, memory, self.show_disassembly)
 				self.append_page(viewer, label)
 				
+				# Tooltip shows alternative names
+				label.set_tooltip_text("In expressions: %s"%(
+					", ".join(memory.names)))
+				
 				# Connect to the edited signal for every register bank
 				viewer.connect("edited", self._on_edited)
 				
