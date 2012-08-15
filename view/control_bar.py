@@ -74,22 +74,16 @@ class ControlBar(gtk.VBox):
 		device_menu.set_submenu(device_submenu)
 		self.menubar.append(device_menu)
 		
-		
-		assemble_submenu = self._make_menu((
-			("Reassemble", gtk.STOCK_CONVERT, self._on_assemble_clicked),
-			("Select Source File", gtk.STOCK_OPEN, self._on_select_source_file_clicked),
+		program_submenu = self._make_menu((
+			("Assemble", gtk.STOCK_CONVERT, self._on_select_source_file_clicked),
+			("Reassemble", gtk.STOCK_REFRESH, self._on_assemble_clicked),
+			None,
+			("Load Image", gtk.STOCK_GO_DOWN, self._on_select_image_file_clicked),
+			("Reload Image", gtk.STOCK_REFRESH, self._on_load_clicked),
 		))
-		assemble_menu = self._make_menu_item("Assemble")
-		assemble_menu.set_submenu(assemble_submenu)
-		self.menubar.append(assemble_menu)
-		
-		load_submenu = self._make_menu((
-			("Reload Image", gtk.STOCK_GO_DOWN, self._on_load_clicked),
-			("Select Image File", gtk.STOCK_OPEN, self._on_select_image_file_clicked),
-		))
-		load_menu = self._make_menu_item("Load")
-		load_menu.set_submenu(load_submenu)
-		self.menubar.append(load_menu)
+		program_menu = self._make_menu_item("Program")
+		program_menu.set_submenu(program_submenu)
+		self.menubar.append(program_menu)
 		
 		
 		self.pause_menu_btn = self._make_menu_item("Pause", check = True)
