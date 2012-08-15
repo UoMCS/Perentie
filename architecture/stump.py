@@ -15,11 +15,11 @@ from assembler.stump    import STUMPAssembler
 
 class STUMP(Architecture):
 	
-	def __init__(self):
+	def __init__(self, *args, **kwargs):
 		"""
 		Define the STUMP system's memory, registers etc.
 		"""
-		Architecture.__init__(self)
+		Architecture.__init__(self, *args, **kwargs)
 		
 		self.name = "STUMP"
 		

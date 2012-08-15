@@ -5,18 +5,27 @@ A GTK+ toolbar for controling a system.
 """
 
 
-import gtk
+import gtk, gobject
 
 from background import RunInBackground
 
 
-class ControlBar(gtk.Toolbar):
+class ControlBar(gtk.VBox):
+	
+	__gsignals__ = {
+		"auto-refresh-toggled": (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, tuple()),
+		"select-target-clicked": (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, tuple()),
+		"redetect-clicked": (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, tuple()),
+		"quit-clicked": (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, tuple()),
+		"new-memory-viewer-clicked": (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, tuple()),
+		"new-register-viewer-clicked": (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, tuple()),
+	}
 	
 	def __init__(self, system):
 		"""
 		A control bar for a system.
 		"""
-		gtk.Toolbar.__init__(self)
+		gtk.VBox.__init__(self)
 		
 		self.system = system
 		
@@ -27,21 +36,102 @@ class ControlBar(gtk.Toolbar):
 		# separator when needed.
 		self.periphs_added = False
 		
+		# Add the menubar
+		self.menubar = gtk.MenuBar()
+		self._init_menubar()
+		self.pack_start(self.menubar, fill = True, expand = False)
+		self.menubar.show()
+		
+		# Add the toolbar
+		self.toolbar = gtk.Toolbar()
+		self._init_toolbar()
+		self.pack_start(self.toolbar, fill = True, expand = False)
+		self.toolbar.show()
+	
+	
+	def _init_menubar(self):
+		"""
+		Add the menu buttons to the bar
+		"""
+		self.auto_refresh_button = self._make_menu_item("Auto Refresh", check = True)
+		self.auto_refresh_button.connect("toggled", self._on_auto_refresh_toggled)
+		device_submenu = self._make_menu((
+			("Select Target",  gtk.STOCK_CONNECT,     self._on_select_target_clicked),
+			None,
+			("Device Info",    gtk.STOCK_INFO,        self._on_info_clicked),
+			None,
+			("Refresh Now",    gtk.STOCK_REFRESH,     self._on_redetect_clicked),
+			self.auto_refresh_button,
+			None,
+			("Quit",           gtk.STOCK_QUIT,        self._on_quit_clicked),
+		))
+		
+		device_menu = self._make_menu_item("Device")
+		device_menu.set_submenu(device_submenu)
+		self.menubar.append(device_menu)
+		
+		
+		assemble_submenu = self._make_menu((
+			("Reassemble", gtk.STOCK_CONVERT, self._on_assemble_clicked),
+			("Select Source File", gtk.STOCK_OPEN, self._on_select_source_file_clicked),
+		))
+		assemble_menu = self._make_menu_item("Assemble")
+		assemble_menu.set_submenu(assemble_submenu)
+		self.menubar.append(assemble_menu)
+		
+		load_submenu = self._make_menu((
+			("Reload Image", gtk.STOCK_GO_DOWN, self._on_load_clicked),
+			("Select Image File", gtk.STOCK_OPEN, self._on_select_image_file_clicked),
+		))
+		load_menu = self._make_menu_item("Load")
+		load_menu.set_submenu(load_submenu)
+		self.menubar.append(load_menu)
+		
+		
+		self.pause_menu_btn = self._make_menu_item("Pause", check = True)
+		self.pause_menu_btn.connect("toggled", self._on_pause_clicked)
+		control_submenu = self._make_menu((
+			("Reset", gtk.STOCK_REFRESH, self._on_reset_clicked),
+			None,
+			("Run", gtk.STOCK_MEDIA_PLAY, self._on_run_clicked),
+			("Stop", gtk.STOCK_MEDIA_STOP, self._on_stop_clicked),
+			None,
+			("Step", gtk.STOCK_MEDIA_NEXT, self._on_step_clicked),
+			("Multi-Step", gtk.STOCK_MEDIA_FORWARD, self._on_multi_step_clicked),
+			self.pause_menu_btn,
+		))
+		control_menu = self._make_menu_item("Control")
+		control_menu.set_submenu(control_submenu)
+		self.menubar.append(control_menu)
+		
+		window_submenu = self._make_menu((
+			("New Memory Viewer",   gtk.STOCK_NEW, self._on_new_memory_viewer_clicked),
+			("New Register Viewer", gtk.STOCK_NEW, self._on_new_register_viewer_clicked),
+		))
+		window_menu = self._make_menu_item("Window")
+		window_menu.set_submenu(window_submenu)
+		self.menubar.append(window_menu)
+	
+	
+	def _init_toolbar(self):
+		"""
+		Add the main buttons to the toolbar
+		"""
 		b = self._add_button("Reset", gtk.STOCK_REFRESH, self._on_reset_clicked,
 		                     "Reset the board")
 		self.disabled_on_busy.append(b)
-		self.assemble_menu = self._make_menu((
+		assemble_submenu = self._make_menu((
 			("Reassemble", gtk.STOCK_CONVERT, self._on_reassemble_clicked),
 			("Select Source File", gtk.STOCK_OPEN, self._on_select_source_file_clicked),
 		))
-		self._add_menu_button("Assemble", gtk.STOCK_CONVERT, self.assemble_menu,
+		self._add_menu_button("Assemble", gtk.STOCK_CONVERT, assemble_submenu,
 		                      self._on_assemble_clicked,
 		                      "Assemble source file")
-		self.load_menu = self._make_menu((
+		load_submenu = self._make_menu((
 			("Reload", gtk.STOCK_GO_DOWN, self._on_reload_clicked),
 			("Select Image File", gtk.STOCK_OPEN, self._on_select_image_file_clicked),
 		))
-		self._add_menu_button("Load", gtk.STOCK_GO_DOWN, self.load_menu,
+		self._add_menu_button("Load", gtk.STOCK_GO_DOWN, load_submenu,
 		                      self._on_load_clicked,
 		                      "Load memory image onto device")
 		
@@ -71,9 +161,9 @@ class ControlBar(gtk.Toolbar):
 		self.disabled_on_busy.append(b)
 		
 		# Show text and icons
-		self.set_style(gtk.TOOLBAR_BOTH)
+		self.toolbar.set_style(gtk.TOOLBAR_BOTH)
 		
-		for tool in self:
+		for tool in self.toolbar:
 			tool.set_homogeneous(True)
 	
 	
@@ -90,7 +180,7 @@ class ControlBar(gtk.Toolbar):
 		btn.set_tooltip_text(tooltip)
 		
 		# Add it to the toolbar
-		self.insert(btn, -1)
+		self.toolbar.insert(btn, -1)
 		btn.show()
 		
 		return btn
@@ -109,34 +199,58 @@ class ControlBar(gtk.Toolbar):
 		btn.set_tooltip_text(tooltip)
 		
 		# Add it to the toolbar
-		self.insert(btn, -1)
+		self.toolbar.insert(btn, -1)
 		btn.show()
 		
 		return btn
 	
 	
+	
+	def _make_menu_item(self, item, icon_stock_id = None, icon = None, check = False):
+		"""
+		Create a MenuItem (or CheckMenuItem) with the given text and icon_stock_id.
+		"""
+		# Create the menu item
+		if check:
+			menu_item = gtk.CheckMenuItem()
+		else:
+			menu_item = gtk.ImageMenuItem()
+			menu_item.set_always_show_image(True)
+		
+		menu_item.set_label(item)
+		
+		if icon_stock_id is not None and not check:
+			icon = gtk.Image()
+			icon.set_from_stock(icon_stock_id, gtk.ICON_SIZE_MENU)
+			icon.show()
+		
+		if icon is not None:
+			menu_item.set_image(icon)
+			
+		return menu_item
+	
+	
 	def _make_menu(self, items):
 		"""
-		Make a GTK Menu with (item, callback) pairs.
+		Make a GTK Menu with (item, icon_stock_id, callback) pairs.
 		"""
 		menu = gtk.Menu()
 		
-		for item, icon_stock_id, callback in items:
-			# Load the stock icon
-			icon = gtk.Image()
-			icon.set_from_stock(icon_stock_id, gtk.ICON_SIZE_LARGE_TOOLBAR)
-			icon.show()
-			
-			# Create the menu item
-			menu_item = gtk.ImageMenuItem()
-			menu_item.set_label(item)
-			menu_item.set_image(icon)
-			menu_item.set_always_show_image(True)
-			
-			# Add callback and add to the menu
-			menu_item.connect("activate", callback)
-			menu.append(menu_item)
-			menu_item.show()
+		for item in items:
+			if item is None:
+				menu.append(gtk.SeparatorMenuItem())
+			elif type(item) is tuple:
+				item, icon_stock_id, callback = item
+				
+				menu_item = self._make_menu_item(item, icon_stock_id)
+				
+				# Add callback and add to the menu
+				menu_item.connect("activate", callback)
+				menu_item.show()
+				menu.append(menu_item)
+			else:
+				item.show()
+				menu.append(item)
 		
 		return menu
 	
@@ -155,7 +269,7 @@ class ControlBar(gtk.Toolbar):
 		btn.connect("clicked", callback)
 		
 		# Add to the toolbar
-		self.insert(btn, -1)
+		self.toolbar.insert(btn, -1)
 		btn.show()
 		
 		return btn
@@ -178,7 +292,7 @@ class ControlBar(gtk.Toolbar):
 		spin.show()
 		
 		# Add the container to the toolbar
-		self.insert(tool, -1)
+		self.toolbar.insert(tool, -1)
 		tool.show()
 		
 		return spin
@@ -186,7 +300,7 @@ class ControlBar(gtk.Toolbar):
 	
 	def _add_separator(self):
 		sep = gtk.SeparatorToolItem()
-		self.insert(sep, -1)
+		self.toolbar.insert(sep, -1)
 		sep.show()
 	
 	
@@ -198,15 +312,29 @@ class ControlBar(gtk.Toolbar):
 		if not self.periphs_added:
 			self._add_separator()
 			self.periphs_added = True
+			
+			self.peripheral_submenu = gtk.Menu()
+			peripheral_menu = self._make_menu_item("Peripherals")
+			peripheral_menu.set_submenu(self.peripheral_submenu)
+			self.menubar.append(peripheral_menu)
 		
+		# Add to toolbar
 		icon = gtk.Image()
 		icon.set_from_pixbuf(peripheral.get_icon(gtk.ICON_SIZE_LARGE_TOOLBAR))
 		icon.show()
-		
 		self._add_button(peripheral.get_short_name(),
 		                 None, callback,
 		                 peripheral.get_name(),
 		                 icon = icon)
+		
+		# Add to menubar
+		icon = gtk.Image()
+		icon.set_from_pixbuf(peripheral.get_icon(gtk.ICON_SIZE_MENU))
+		icon.show()
+		menu_item = self._make_menu_item(peripheral.get_short_name(),
+		                                 icon = icon)
+		menu_item.connect("activate", callback)
+		self.peripheral_submenu.append(menu_item)
 	
 	
 	@RunInBackground()
@@ -398,6 +526,68 @@ class ControlBar(gtk.Toolbar):
 		# Do nothing
 		pass
 	
+	def _on_auto_refresh_toggled(self, btn):
+		self.emit("auto-refresh-toggled")
+	
+	
+	def _on_select_target_clicked(self, btn):
+		self.emit("select-target-clicked")
+	
+	
+	def _on_info_clicked(self, btn):
+		info_string  = ""
+		info_string += "<b>Architecture</b>: %s (<i>%02X/%04X</i>)\n\n"%(
+			self.system.architecture.name,
+			self.system.architecture.cpu_type,
+			self.system.architecture.cpu_subtype,
+		)
+		
+		info_string += "<b>Register Banks:</b>\n"
+		for register_bank in self.system.architecture.register_banks:
+			info_string += "  %s (aka <i>%s</i>):\n"%(
+				register_bank.name,
+				", ".join(register_bank.names[1:]),
+			)
+			for register in register_bank.registers:
+				info_string += "    %d-bit %s Register %s (aka <i>%s</i>)\n"%(
+					register.width_bits,
+					"Integer" if register.bit_field is None else "Bit-Field",
+					register.name,
+					", ".join(register.names[1:]),
+				)
+		info_string += "\n"
+		
+		info_string += "<b>Memories:</b>\n"
+		for memory in self.system.architecture.memories:
+			info_string += "  %s (aka <i>%s</i>):\n"%(
+				memory.name, ", ".join(memory.names[1:]),)
+			info_string += "    %d-bit addresses\n"%(memory.addr_width_bits)
+			info_string += "    %d-bit minmum-addressable blocks\n"%(memory.word_width_bits)
+			info_string += "    %d blocks (%d bytes)\n"%(
+				memory.size, (memory.word_width_bits * memory.size)/8)
+		
+		info_dialog = gtk.MessageDialog(buttons = gtk.BUTTONS_OK)
+		info_dialog.set_title("Device Info")
+		info_dialog.set_markup(info_string)
+		
+		info_dialog.run()
+		info_dialog.destroy()
+	
+	
+	def _on_redetect_clicked(self, btn):
+		self.emit("redetect-clicked")
+	
+	
+	def _on_quit_clicked(self, btn):
+		self.emit("quit-clicked")
+	
+	def _on_new_memory_viewer_clicked(self, btn):
+		self.emit("new-memory-viewer-clicked")
+	
+	
+	def _on_new_register_viewer_clicked(self, btn):
+		self.emit("new-register-viewer-clicked")
+	
 	
 	@RunInBackground()
 	def _refresh_pause_btn(self):
@@ -422,6 +612,10 @@ class ControlBar(gtk.Toolbar):
 		self.pause_btn.handler_block_by_func(self._on_pause_clicked)
 		self.pause_btn.set_active(paused)
 		self.pause_btn.handler_unblock_by_func(self._on_pause_clicked)
+		
+		self.pause_menu_btn.handler_block_by_func(self._on_pause_clicked)
+		self.pause_menu_btn.set_active(paused)
+		self.pause_menu_btn.handler_unblock_by_func(self._on_pause_clicked)
 	
 	
 	@RunInBackground()

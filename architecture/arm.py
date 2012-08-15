@@ -12,11 +12,11 @@ from memory   import Memory
 
 class ARM(Architecture):
 	
-	def __init__(self):
+	def __init__(self, *args, **kwargs):
 		"""
 		Define the ARM's system's memory, registers etc.
 		"""
-		Architecture.__init__(self)
+		Architecture.__init__(self, *args, **kwargs)
 		
 		self.name = "ARM"
 		
