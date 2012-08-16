@@ -174,22 +174,22 @@ class ControlBar(gtk.VBox):
 		Add the main buttons to the toolbar
 		"""
 		b = self._add_button("Reset", gtk.STOCK_REFRESH, self._on_reset_clicked,
-		                     "Reset the board")
+		                     "Reset the board (F2)")
 		self.disabled_on_busy.append(b)
 		assemble_submenu = self._make_menu((
-			("Reassemble", gtk.STOCK_CONVERT, self._on_reassemble_clicked),
+			("Reassemble (F3)", gtk.STOCK_CONVERT, self._on_reassemble_clicked),
 			("Select Source File", gtk.STOCK_OPEN, self._on_select_source_file_clicked),
 		))
 		self.assemble_btn = self._add_menu_button("Assemble", gtk.STOCK_CONVERT, assemble_submenu,
 		                                          self._on_assemble_clicked,
-		                                          "Assemble source file")
+		                                          "Reassemble source file (F3)")
 		load_submenu = self._make_menu((
-			("Reload", gtk.STOCK_GO_DOWN, self._on_reload_clicked),
+			("Reload (F4)", gtk.STOCK_GO_DOWN, self._on_reload_clicked),
 			("Select Image File", gtk.STOCK_OPEN, self._on_select_image_file_clicked),
 		))
 		self.load_btn = self._add_menu_button("Load", gtk.STOCK_GO_DOWN, load_submenu,
 		                                      self._on_load_clicked,
-		                                      "Load memory image onto device")
+		                                      "Load memory image onto device (F4)")
 		
 		self.disabled_on_no_assembler.append(self.assemble_btn)
 		self.disabled_on_no_loader.append(self.load_btn)
@@ -197,23 +197,23 @@ class ControlBar(gtk.VBox):
 		self._add_separator()
 		
 		b = self._add_button("Run", gtk.STOCK_MEDIA_PLAY, self._on_run_clicked,
-		                     "Run indefinately")
+		                     "Run indefinately (F5)")
 		self.disabled_on_busy.append(b)
 		b = self._add_button("Stop", gtk.STOCK_MEDIA_STOP, self._on_stop_clicked,
-		                     "Stop and ignore remaining steps")
+		                     "Stop and ignore remaining steps (F6)")
 		self.disabled_on_busy.append(b)
 		
 		self._add_separator()
 		
 		b = self._add_button("Step", gtk.STOCK_MEDIA_NEXT, self._on_step_clicked,
-		                     "Execute a single step")
+		                     "Execute a single step (F7)")
 		self.disabled_on_busy.append(b)
 		b = self._add_button("Multi-Step", gtk.STOCK_MEDIA_FORWARD, self._on_multi_step_clicked,
-		                     "Run for the specified number of steps")
+		                     "Run for the specified number of steps (F8)")
 		self.disabled_on_busy.append(b)
 		self.pause_btn = self._add_toggle_button(
 		                      "Pause", gtk.STOCK_MEDIA_PAUSE, self._on_pause_clicked,
-		                      "Toggle Pause Multi-Stepping")
+		                      "Toggle Pause Multi-Stepping (F9)")
 		self.disabled_on_busy.append(self.pause_btn)
 		self.multi_step_spin = self._add_spin_box(4, 1, 1<<32, self._on_multi_step_changed,
 		                   "Number of steps to execute for Multi-Step")
