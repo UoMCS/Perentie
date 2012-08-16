@@ -15,11 +15,15 @@ from assembler.stump    import STUMPAssembler
 
 class STUMP(Architecture):
 	
-	def __init__(self, *args, **kwargs):
+	# CPU Sub-types which enable/disable register support
+	SUBTYPE_REG_AND_MEM = 0x0000
+	SUBTYPE_MEMORY_ONLY = 0x0001
+	
+	def __init__(self, cpu_type, cpu_subtype):
 		"""
 		Define the STUMP system's memory, registers etc.
 		"""
-		Architecture.__init__(self, *args, **kwargs)
+		Architecture.__init__(self, cpu_type, cpu_subtype)
 		
 		self.name = "STUMP"
 		
@@ -35,7 +39,8 @@ class STUMP(Architecture):
 
 		self.memories.append(memory)
 		
-		self._define_registers(memory)
+		if cpu_subtype != STUMP.SUBTYPE_MEMORY_ONLY:
+			self._define_registers(memory)
 	
 	
 	def _define_registers(self, memory):
