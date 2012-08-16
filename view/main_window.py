@@ -9,6 +9,7 @@ import gtk, glib, gobject
 
 from background import RunInBackground
 
+from placeholder      import Placeholder
 from register         import RegisterViewer
 from memory           import MemoryViewer
 from control_bar      import ControlBar
@@ -26,6 +27,9 @@ class MainWindow(gtk.Window):
 	
 	# Number of ms between screen refreshes
 	REFRESH_INTERVAL = 300
+	
+	# Default window size on start
+	DEFAULT_SIZE = (1024, 768)
 	
 	def __init__(self, system):
 		"""
@@ -94,7 +98,7 @@ class MainWindow(gtk.Window):
 		Set up the GUI and all its widgets!
 		"""
 		# Default window size
-		self.set_default_size(1024, 768)
+		self.set_default_size(*MainWindow.DEFAULT_SIZE)
 		
 		vbox = gtk.VBox()
 		self.add(vbox)
