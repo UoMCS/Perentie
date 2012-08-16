@@ -40,7 +40,7 @@ class MainWindow(gtk.Window):
 		
 		self.system = system
 		
-		# Number of log entries recieved while the log-viewer was collapsed
+		# Number of log entries received while the log-viewer was collapsed
 		self.unread_log_entries = 0
 		
 		# A list of peripheral viewer widgets
@@ -65,10 +65,13 @@ class MainWindow(gtk.Window):
 		self.memory_viewer_top = MemoryViewer(self.system, True)
 		self.memory_viewer_btm = MemoryViewer(self.system, False)
 		
+		# Placeholder messages
+		self._init_placeholders()
+		
 		# Set up keyboard shortcuts
 		self.add_accel_group(self.control_bar.accelerators)
 		
-		# Propogate out refreshes when the device's state is changed
+		# Propagate out refreshes when the device's state is changed
 		self.control_bar.connect("device-state-changed", self._on_device_state_changed)
 		self.register_viewer.connect("edited", self._on_device_state_changed)
 		self.memory_viewer_top.connect("edited", self._on_device_state_changed)
@@ -93,6 +96,87 @@ class MainWindow(gtk.Window):
 		self._architecture_changed()
 	
 	
+	def _init_placeholders(self):
+		"""
+		Create the placeholder messages which may be shown.
+		"""
+		self.unknown_device_placeholder = Placeholder(
+			"Unknown Architecture",
+			"The connected device's architecture is unknown. "+
+			"Peripherals and general board functions may still " +
+			"be used but register banks and memories cannot be " +
+			"accessed.",
+			gtk.STOCK_DIALOG_WARNING)
+		
+		self.no_reg_or_mem_placeholder = Placeholder(
+			"No Register Banks or Memories",
+			"The connected device does not have any known register banks "+
+			"or memories.",
+			gtk.STOCK_DIALOG_WARNING)
+	
+	
+	def _remove_main_widgets(self):
+		"""
+		Remove all main widgets (and any container they're in).
+		"""
+		top_level_containers = set()
+		
+		# Scan each widget removing it from its container and checking if it is not
+		# the vbox.
+		for widget in (self.register_viewer,
+		               self.mem_panes,
+		               self.unknown_device_placeholder,
+		               self.no_reg_or_mem_placeholder):
+			parent = widget.get_parent()
+			if parent is not None:
+				# Remove the widget from wherever it is contained
+				parent.remove(widget)
+				
+				# Was this widget is contained in some sub-container
+				if parent is not self.vbox:
+					top_level_containers.add(parent)
+			
+		
+		# Remove the top-level containers
+		for container in top_level_containers:
+			self.vbox.remove(container)
+			container.destroy()
+	
+	
+	def _set_mem_reg_visible(self, enable_memory_viewer, enable_register_viewer):
+		"""
+		Will show the memory and/or register viewer widgets (or a placeholder) in
+		the main window.
+		"""
+		self._remove_main_widgets()
+		
+		# The widget to insert into the main space of the window
+		top_level_widget = None
+		
+		if enable_memory_viewer and enable_register_viewer:
+			# Both memory and registers are visible, show them in two panes
+			top_level_widget = gtk.HPaned()
+			top_level_widget.pack1(self.register_viewer, shrink = False)
+			top_level_widget.pack2(self.mem_panes, shrink = False)
+		elif enable_memory_viewer:
+			# Only the memory viewer is enabled
+			top_level_widget = self.mem_panes
+		elif enable_register_viewer:
+			# Only the register viewer is enabled
+			top_level_widget = self.register_viewer
+		elif self.system.architecture is not None:
+			# The architecture doesn't feature either memory or registers
+			top_level_widget = self.no_reg_or_mem_placeholder
+		else:
+			# The architecture is unknown
+			top_level_widget = self.unknown_device_placeholder
+		
+		# Insert the widget into the main slot of the window
+		self.vbox.pack_start(top_level_widget, expand = True, fill = True)
+		self.vbox.reorder_child(top_level_widget, 1)
+		top_level_widget.show_all()
+	
+	
 	def _init_gui(self):
 		"""
 		Set up the GUI and all its widgets!
@@ -100,32 +184,32 @@ class MainWindow(gtk.Window):
 		# Default window size
 		self.set_default_size(*MainWindow.DEFAULT_SIZE)
 		
-		vbox = gtk.VBox()
-		self.add(vbox)
+		self.vbox = gtk.VBox()
+		self.add(self.vbox)
 		
 		# Add the control/menu bar
-		vbox.pack_start(self.control_bar, expand = False, fill = True)
+		self.vbox.pack_start(self.control_bar, expand = False, fill = True)
 		
 		# Add a movable division between the register and memory viewers
 		reg_mem_panes = gtk.HPaned()
-		vbox.pack_start(reg_mem_panes, expand = True, fill = True)
+		self.vbox.pack_start(reg_mem_panes, expand = True, fill = True)
 		
 		# Add the register viewer
 		reg_mem_panes.pack1(self.register_viewer, shrink = False)
 		
 		# Add a movable division between the two memory viewers
-		mem_split = gtk.VPaned()
-		reg_mem_panes.pack2(mem_split, shrink = False)
+		self.mem_panes = gtk.VPaned()
+		reg_mem_panes.pack2(self.mem_panes, shrink = False)
 		
 		# Display the memory viewers
-		mem_split.pack1(self.memory_viewer_top, resize = True, shrink = False)
-		mem_split.pack2(self.memory_viewer_btm, resize = True, shrink = False)
+		self.mem_panes.pack1(self.memory_viewer_top, resize = True, shrink = False)
+		self.mem_panes.pack2(self.memory_viewer_btm, resize = True, shrink = False)
 		
 		# Add an expander with a log viewer in
 		self.log_expander = gtk.Expander("Error Log")
 		self.log_expander.add(self.log_viewer)
 		self.log_expander.set_use_markup(True)
-		vbox.pack_start(self.log_expander, expand = False, fill = True)
+		self.vbox.pack_start(self.log_expander, expand = False, fill = True)
 		
 		# Expand the viewer if a flagged entry arrives
 		self.log_viewer.connect("update", self._on_log_update)
@@ -134,7 +218,7 @@ class MainWindow(gtk.Window):
 		self.log_expander.connect("activate", self._on_log_update, None)
 		
 		# Add a status-bar
-		vbox.pack_start(self.status_bar, fill=True, expand=False)
+		self.vbox.pack_start(self.status_bar, fill=True, expand=False)
 		
 		# Tick the auto-refresh box
 		self.control_bar.auto_refresh_button.set_active(True)
@@ -409,6 +493,14 @@ class MainWindow(gtk.Window):
 		
 		# Update the peripherals available
 		self._update_peripherals()
+		
+		# Display the appropriate main viewers (or display a placeholder)
+		enable_memory_viewer   = False
+		enable_register_viewer = False
+		if self.system.architecture is not None:
+			enable_memory_viewer   = len(self.system.architecture.memories) > 0
+			enable_register_viewer = len(self.system.architecture.register_banks) > 0
+		self._set_mem_reg_visible(enable_memory_viewer, enable_register_viewer)
 		
 		self.refresh()
 	
