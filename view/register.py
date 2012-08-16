@@ -192,7 +192,12 @@ class RegisterBankViewer(gtk.VBox):
 			
 			self.register_list_model.append((register.name, "", "", tooltip))
 		
-		self.pack_start(self.register_list, expand = True, fill = True)
+		self.register_list_scroller = gtk.ScrolledWindow()
+		self.register_list_scroller.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
+		self.register_list_scroller.add(self.register_list)
+		
+		self.pack_start(self.register_list_scroller, expand = True, fill = True)
+		self.register_list_scroller.show()
 		self.register_list.show()
 	
 	
@@ -200,6 +205,10 @@ class RegisterBankViewer(gtk.VBox):
 		"""
 		Add the bit-field register viewers
 		"""
+		# Don't add anything if there aren't any registers
+		if not self.bit_registers:
+			return
+		
 		self.bit_notebook = gtk.Notebook()
 
 		for register in self.bit_registers:
