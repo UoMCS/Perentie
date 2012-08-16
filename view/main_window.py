@@ -61,6 +61,9 @@ class MainWindow(gtk.Window):
 		self.memory_viewer_top = MemoryViewer(self.system, True)
 		self.memory_viewer_btm = MemoryViewer(self.system, False)
 		
+		# Set up keyboard shortcuts
+		self.add_accel_group(self.control_bar.accelerators)
+		
 		# Propogate out refreshes when the device's state is changed
 		self.control_bar.connect("device-state-changed", self._on_device_state_changed)
 		self.register_viewer.connect("edited", self._on_device_state_changed)
@@ -161,6 +164,9 @@ class MainWindow(gtk.Window):
 		if size is not None:
 			periph_window.set_default_size(*size)
 		
+		# Share main window's keyboard shortcuts
+		periph_window.add_accel_group(self.control_bar.accelerators)
+		
 		return periph_window
 	
 	
@@ -237,7 +243,7 @@ class MainWindow(gtk.Window):
 				# A viewer already been created for this widget, make sure its
 				# peripheral number is up-to-date
 				index = cur_periph_ids.index((periph_id, periph_sub_id))
-				self.periph_viewers.periph_num = periph_num
+				self.periph_viewers[index].periph_num = periph_num
 				
 				# Widget has been updated
 				cur_periph_ids[index] = None
