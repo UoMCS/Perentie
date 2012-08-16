@@ -46,14 +46,14 @@ def read_bitfile(f):
 	
 	# Date-stamp
 	datestamp_length = ord(f.read(1))
-	datestamp = f.read(datestamp_length).strip("\x00")
+	datestamp = f.read(datestamp_length).strip("\x00").replace(" ","0")
 	
 	# Discard
 	f.read(2)
 	
 	# Time-stamp
 	timestamp_length = ord(f.read(1))
-	timestamp = f.read(timestamp_length).strip("\x00")
+	timestamp = f.read(timestamp_length).strip("\x00").replace(" ","0")
 	
 	# Discard
 	f.read(1)
