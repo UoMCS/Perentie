@@ -5,13 +5,16 @@ Views for various supported device peripherals.
 """
 
 
-from xilinx import Spartan3
+from xilinx           import Spartan3
+from debug_controller import DebugController
 
 
 # Mapping of (id, sub_id0, sub_id1) to (name, view) where view may be None if no view is
 # available. If the sub_id0/1 is none, any value matches.
 PERIPHERALS = {
 	(0x0, None, None): ("Terminal", None),
+	
+	(0x1, None, None): ("Debug Controller", DebugController),
 	
 	(0x8, None, None): ("Performance Monitor", None),
 	
