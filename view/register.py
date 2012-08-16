@@ -74,7 +74,6 @@ class RegisterViewer(gtk.Notebook):
 		placeholder = Placeholder(title, body, gtk.STOCK_DIALOG_WARNING)
 		placeholder.show()
 		self.append_page(placeholder)
-		self.showing_placeholder = True
 		self.set_show_tabs(False)
 	
 	
@@ -83,6 +82,8 @@ class RegisterViewer(gtk.Notebook):
 		Called when the architecture changes, deals with all the
 		architecture-specific changes which need to be made to the GUI.
 		"""
+		self.showing_placeholder = True
+		
 		# Remove all existing pages
 		while self.get_n_pages():
 			widget = self.get_nth_page(0)
