@@ -208,7 +208,7 @@ class MainWindow(gtk.Window):
 		"""
 		Destroy a periph_widget and disconnect everything.
 		"""
-		periph_window = periph_viewers.get_parent_window()
+		periph_window = periph_viewer.get_parent_window()
 		
 		# Disconnect all the adjustments
 		adjustments = periph_window.get_progress_adjustments()
