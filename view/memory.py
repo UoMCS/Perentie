@@ -448,7 +448,7 @@ class MemoryTableViewer(gtk.Table):
 		# The TreeModel into which data will be inserted for display by the
 		# treeview. Initially contains a single empty row which is used for
 		# measuring the height of a row in the table.
-		self.list_store = gtk.ListStore(gtk.gdk.Pixbuf, str, str, str, int, int)
+		self.list_store = gtk.ListStore(gtk.gdk.Pixbuf, str, str, str, object, object)
 		self._add_empty_row()
 		
 		# The treeview and model used to display memory elements. The size request
@@ -768,8 +768,8 @@ class MemoryTableViewer(gtk.Table):
 			str,                             # Colour
 			str,                             # Toolip-text
 			str,                             # Address
-			int,                             # Address (as int)
-			int,                             # Length
+			object,                          # Address (as int)
+			object,                          # Length
 			] + ([str] * len(columns)))) # Data from the memory table (as strings)
 		
 		# Ensure there is at least one row (for display calculations)

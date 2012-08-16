@@ -51,6 +51,9 @@ class ControlBar(gtk.VBox):
 		self._init_toolbar()
 		self.pack_start(self.toolbar, fill = True, expand = False)
 		self.toolbar.show()
+		
+		# Initialise enabled values
+		self.architecture_changed()
 	
 	
 	def _init_menubar(self):
@@ -60,7 +63,7 @@ class ControlBar(gtk.VBox):
 		self.auto_refresh_button = self._make_menu_item("Auto Refresh", check = True)
 		self.auto_refresh_button.connect("toggled", self._on_auto_refresh_toggled)
 		device_submenu = self._make_menu((
-			("Select Target",  gtk.STOCK_CONNECT,     self._on_select_target_clicked),
+			("Select New Target",  gtk.STOCK_CONNECT, self._on_select_target_clicked),
 			None,
 			("Device Info",    gtk.STOCK_INFO,        self._on_info_clicked),
 			None,
@@ -74,12 +77,20 @@ class ControlBar(gtk.VBox):
 		device_menu.set_submenu(device_submenu)
 		self.menubar.append(device_menu)
 		
+		self.assemble_menu_btn   = self._make_menu_item("Assemble",  gtk.STOCK_CONVERT)
+		self.reassemble_menu_btn = self._make_menu_item("Ressemble", gtk.STOCK_REFRESH)
+		self.load_menu_btn   = self._make_menu_item("Load Image",    gtk.STOCK_GO_DOWN)
+		self.reload_menu_btn = self._make_menu_item("Reload Image",  gtk.STOCK_REFRESH)
+		self.assemble_menu_btn.connect("activate",   self._on_select_source_file_clicked)
+		self.reassemble_menu_btn.connect("activate", self._on_assemble_clicked)
+		self.load_menu_btn.connect("activate",       self._on_select_image_file_clicked)
+		self.reload_menu_btn.connect("activate",     self._on_load_clicked)
 		program_submenu = self._make_menu((
-			("Assemble", gtk.STOCK_CONVERT, self._on_select_source_file_clicked),
-			("Reassemble", gtk.STOCK_REFRESH, self._on_assemble_clicked),
+			self.assemble_menu_btn,
+			self.reassemble_menu_btn,
 			None,
-			("Load Image", gtk.STOCK_GO_DOWN, self._on_select_image_file_clicked),
-			("Reload Image", gtk.STOCK_REFRESH, self._on_load_clicked),
+			self.load_menu_btn,
+			self.reload_menu_btn,
 		))
 		program_menu = self._make_menu_item("Program")
 		program_menu.set_submenu(program_submenu)
@@ -130,16 +141,16 @@ class ControlBar(gtk.VBox):
 			("Reassemble", gtk.STOCK_CONVERT, self._on_reassemble_clicked),
 			("Select Source File", gtk.STOCK_OPEN, self._on_select_source_file_clicked),
 		))
-		self._add_menu_button("Assemble", gtk.STOCK_CONVERT, assemble_submenu,
-		                      self._on_assemble_clicked,
-		                      "Assemble source file")
+		self.assemble_btn = self._add_menu_button("Assemble", gtk.STOCK_CONVERT, assemble_submenu,
+		                                          self._on_assemble_clicked,
+		                                          "Assemble source file")
 		load_submenu = self._make_menu((
 			("Reload", gtk.STOCK_GO_DOWN, self._on_reload_clicked),
 			("Select Image File", gtk.STOCK_OPEN, self._on_select_image_file_clicked),
 		))
-		self._add_menu_button("Load", gtk.STOCK_GO_DOWN, load_submenu,
-		                      self._on_load_clicked,
-		                      "Load memory image onto device")
+		self.load_btn = self._add_menu_button("Load", gtk.STOCK_GO_DOWN, load_submenu,
+		                                      self._on_load_clicked,
+		                                      "Load memory image onto device")
 		
 		self._add_separator()
 		
@@ -703,5 +714,21 @@ class ControlBar(gtk.VBox):
 		Called when the architecture changes, deals with all the
 		architecture-specific changes which need to be made to the GUI.
 		"""
-		# Nothing to do! The peripheral buttons are updated externally.
+		# Enable/disable assembly/loading buttons as appropriate
+		can_assemble = False
+		can_load     = False
+		
+		if self.system.architecture is not None:
+			memories = self.system.architecture.memories
+			can_load = len(memories) > 0
+			can_assemble = len(sum((m.assemblers for m in memories), [])) > 0
+		
+		self.assemble_btn.set_sensitive(can_assemble)
+		self.assemble_menu_btn.set_sensitive(can_assemble)
+		self.reassemble_menu_btn.set_sensitive(can_assemble)
+		
+		self.load_btn.set_sensitive(can_load)
+		self.load_menu_btn.set_sensitive(can_load)
+		self.reload_menu_btn.set_sensitive(can_load)
+		
 		self.refresh()

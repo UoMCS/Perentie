@@ -91,7 +91,7 @@ class MainWindow(gtk.Window):
 		Set up the GUI and all its widgets!
 		"""
 		# Default window size
-		self.set_default_size(900, 650)
+		self.set_default_size(950, 700)
 		
 		vbox = gtk.VBox()
 		self.add(vbox)
