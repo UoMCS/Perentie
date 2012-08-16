@@ -16,6 +16,8 @@ from format  import *
 
 from background import RunInBackground
 
+from placeholder import Placeholder
+
 from _memory_table import MemoryWordTable, DisassemblyTable
 from _annotation   import RegisterAnnotation
 
@@ -57,6 +59,9 @@ class MemoryViewer(gtk.Notebook):
 		self.system           = system
 		self.show_disassembly = show_disassembly
 		
+		# Is this widget showing a placeholder?
+		self.showing_placeholder = True
+		
 		self.architecture_changed()
 	
 	
@@ -73,8 +78,22 @@ class MemoryViewer(gtk.Notebook):
 		Update the view of the current single memory viewer.
 		"""
 		viewer = self.get_nth_page(self.get_current_page())
-		if viewer is not None:
+		
+		# Only refresh if there is actually a memory viewer present (and not a
+		# placeholder)
+		if not self.showing_placeholder and viewer is not None:
 			viewer.refresh()
+	
+	
+	def _show_placeholder(self, title, body):
+		"""
+		We have no memories, add a single page with the given title and message.
+		"""
+		placeholder = Placeholder(title, body, gtk.STOCK_DIALOG_WARNING)
+		placeholder.show()
+		self.append_page(placeholder)
+		self.showing_placeholder = True
+		self.set_show_tabs(False)
 	
 	
 	def architecture_changed(self):
@@ -93,23 +112,34 @@ class MemoryViewer(gtk.Notebook):
 			# Only show the tabs if there's more than memory
 			self.set_show_tabs(len(self.system.architecture.memories) > 1)
 			
-			for memory in self.system.architecture.memories:
-				label  = gtk.Label(memory.name)
-				viewer = SingleMemoryViewer(self.system, memory, self.show_disassembly)
-				self.append_page(viewer, label)
-				
-				# Tooltip shows alternative names
-				label.set_tooltip_text("In expressions: %s"%(
-					", ".join(memory.names)))
-				
-				# Connect to the edited signal for every register bank
-				viewer.connect("edited", self._on_edited)
-				
-				label.show()
-				viewer.show()
+			if self.system.architecture.memories:
+				# We have some memories, show them!
+				self.showing_placeholder = False
+				for memory in self.system.architecture.memories:
+					label  = gtk.Label(memory.name)
+					viewer = SingleMemoryViewer(self.system, memory, self.show_disassembly)
+					self.append_page(viewer, label)
+					
+					# Tooltip shows alternative names
+					label.set_tooltip_text("In expressions: %s"%(
+						", ".join(memory.names)))
+					
+					# Connect to the edited signal for every register bank
+					viewer.connect("edited", self._on_edited)
+					
+					label.show()
+					viewer.show()
+			else:
+				# No memories in the architecture
+				self._show_placeholder(
+					"No Memories Available",
+					"The connected device does not contain any known memories.")
 		else:
-			# No architecture, no tabs, no contents...
-			self.set_show_tabs(False)
+			# No architecture, show a message
+			self._show_placeholder(
+				"Unknown Architecture",
+				"The connected device's architecture is unknown "+
+				"and so its memories cannot be shown.")
 		
 		self.refresh()
 

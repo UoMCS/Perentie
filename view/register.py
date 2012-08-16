@@ -9,7 +9,9 @@ from threading import Lock
 
 import gtk, gobject
 
-from background import RunInBackground
+from background  import RunInBackground
+from placeholder import Placeholder
+
 from format import *
 
 
@@ -29,6 +31,9 @@ class RegisterViewer(gtk.Notebook):
 		gtk.Notebook.__init__(self)
 		
 		self.system = system
+		
+		# Is this widget showing a placeholder?
+		self.showing_placeholder = True
 		
 		# Tabs on the left
 		self.set_tab_pos(gtk.POS_LEFT)
@@ -56,8 +61,21 @@ class RegisterViewer(gtk.Notebook):
 		Fetch all visible registers.
 		"""
 		register_bank_viewer = self.get_nth_page(self.get_current_page())
-		if register_bank_viewer is not None:
+		if not self.showing_placeholder and register_bank_viewer is not None:
 			register_bank_viewer.refresh()
+	
+	
+	
+	def _show_placeholder(self, title, body):
+		"""
+		We have no register banks, add a single page with the given title and
+		message.
+		"""
+		placeholder = Placeholder(title, body, gtk.STOCK_DIALOG_WARNING)
+		placeholder.show()
+		self.append_page(placeholder)
+		self.showing_placeholder = True
+		self.set_show_tabs(False)
 	
 	
 	def architecture_changed(self):
@@ -77,23 +95,34 @@ class RegisterViewer(gtk.Notebook):
 			self.set_show_tabs(len(self.system.architecture.register_banks) > 1)
 			
 			# Add pages for each register bank
-			for register_bank in self.system.architecture.register_banks:
-				label       = gtk.Label(register_bank.name)
-				bank_viewer = RegisterBankViewer(self.system, register_bank)
-				self.append_page(bank_viewer, label)
-				
-				# Tooltip shows alternative names
-				label.set_tooltip_text("In expressions: %s"%(
-					", ".join(register_bank.names)))
-				
-				# Connect to the edited signal for every register bank
-				bank_viewer.connect("edited", self._on_register_edited, register_bank)
-				
-				label.show()
-				bank_viewer.show()
+			if self.system.architecture.register_banks:
+				# We have some register banks, show them
+				self.showing_placeholder = False
+				for register_bank in self.system.architecture.register_banks:
+					label       = gtk.Label(register_bank.name)
+					bank_viewer = RegisterBankViewer(self.system, register_bank)
+					self.append_page(bank_viewer, label)
+					
+					# Tooltip shows alternative names
+					label.set_tooltip_text("In expressions: %s"%(
+						", ".join(register_bank.names)))
+					
+					# Connect to the edited signal for every register bank
+					bank_viewer.connect("edited", self._on_register_edited, register_bank)
+					
+					label.show()
+					bank_viewer.show()
+			else:
+				# No register banks in the architecture
+				self._show_placeholder(
+					"No Register Banks Available",
+					"The connected device does not contain any known register banks.")
 		else:
-			# No architecture, no tabs, no contents...
-			self.set_show_tabs(False)
+			# No architecture, show a message
+			self._show_placeholder(
+				"Unknown Architecture",
+				"The connected device's architecture is unknown "+
+				"and so its register banks cannot be shown.")
 		
 		self.refresh()
 
