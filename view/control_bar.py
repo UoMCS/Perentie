@@ -211,13 +211,13 @@ class ControlBar(gtk.VBox):
 		b = self._add_button("Multi-Step", gtk.STOCK_MEDIA_FORWARD, self._on_multi_step_clicked,
 		                     "Run for the specified number of steps")
 		self.disabled_on_busy.append(b)
-		b = self.pause_btn = self._add_toggle_button(
+		self.pause_btn = self._add_toggle_button(
 		                      "Pause", gtk.STOCK_MEDIA_PAUSE, self._on_pause_clicked,
 		                      "Toggle Pause Multi-Stepping")
-		self.disabled_on_busy.append(b)
-		b = self.multi_step_spin = self._add_spin_box(4, 1, 1<<32, self._on_multi_step_changed,
+		self.disabled_on_busy.append(self.pause_btn)
+		self.multi_step_spin = self._add_spin_box(4, 1, 1<<32, self._on_multi_step_changed,
 		                   "Number of steps to execute for Multi-Step")
-		self.disabled_on_busy.append(b)
+		self.disabled_on_busy.append(self.multi_step_spin)
 		
 		# Show text and icons
 		self.toolbar.set_style(gtk.TOOLBAR_BOTH)
@@ -357,11 +357,11 @@ class ControlBar(gtk.VBox):
 		
 		# Create the model of the value chosen
 		adj = gtk.Adjustment(value, min_value, max_value, 1, 1)
-		adj.connect("value-changed", callback)
 		
 		# Create the spinbox
 		spin = gtk.SpinButton(adj)
 		spin.set_tooltip_text(tooltip)
+		spin.connect("activate", callback)
 		
 		# Put the spinbox in the container
 		tool.add(spin)
@@ -580,23 +580,11 @@ class ControlBar(gtk.VBox):
 		self.emit("device-state-changed")
 	
 	
-	@RunInBackground(start_in_gtk = True)
 	def _on_multi_step_clicked(self, btn):
 		"""
 		Multi-Step button clicked: Execute a number of steps in the spin box
 		"""
 		self.multi_step_spin.activate()
-		
-		# Run in background
-		yield
-		
-		self.system.run(int(self.multi_step_spin.get_value_as_int()),
-		                break_on_first_instruction = True)
-		
-		# Return to GTK thread
-		yield
-		
-		self.emit("device-state-changed")
 	
 	
 	@RunInBackground()
@@ -619,9 +607,19 @@ class ControlBar(gtk.VBox):
 		self.emit("device-state-changed")
 	
 	
+	@RunInBackground(start_in_gtk = True)
 	def _on_multi_step_changed(self, btn):
-		# Do nothing
-		pass
+		num_steps = int(self.multi_step_spin.get_value_as_int())
+		
+		# Run in background
+		yield
+		
+		self.system.run(num_steps, break_on_first_instruction = True)
+		
+		# Return to GTK thread
+		yield
+		
+		self.emit("device-state-changed")
 	
 	def _on_auto_refresh_toggled(self, btn):
 		self.emit("auto-refresh-toggled")
