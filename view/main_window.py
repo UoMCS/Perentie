@@ -204,19 +204,19 @@ class MainWindow(gtk.Window):
 			self.status_bar.add_adjustment(adjustment, name)
 	
 	
-	def _destroy_periph(self, periph_viewer):
+	def _destroy_periph(self, periph_widget):
 		"""
 		Destroy a periph_widget and disconnect everything.
 		"""
-		periph_window = periph_viewer.get_parent_window()
+		periph_window = periph_widget.get_parent_window()
 		
 		# Disconnect all the adjustments
-		adjustments = periph_window.get_progress_adjustments()
+		adjustments = periph_widget.get_progress_adjustments()
 		for adjustment in adjustments:
 			self.status_bar.remove_adjustment(adjustment)
 		
 		# Remove from the control bar
-		self.control_bar.remove_periph(periph_viewer)
+		self.control_bar.remove_periph(periph_widget)
 		
 		# Close the window
 		periph_window.destroy()
