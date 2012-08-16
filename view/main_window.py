@@ -306,8 +306,10 @@ class MainWindow(gtk.Window):
 		"""
 		Close this window and re-show the initial target selection window.
 		"""
-		for viewer in self.memory_viewers + self.register_viewers:
-			viewer.get_parent_window().destroy()
+		for viewer in self.memory_viewers + self.register_viewers + self.periph_viewers:
+			# XXX: Peripheral widgets don't seem to like get_parent_window...
+			window = viewer.get_parent_window() or viewer.get_parent()
+			window.destroy()
 		
 		# Stop the refresh timer
 		self.killed = True
