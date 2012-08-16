@@ -15,13 +15,17 @@ from assembler.stump    import STUMPAssembler
 
 class STUMP(Architecture):
 	
-	# CPU Sub-types which enable/disable register support
-	SUBTYPE_REG_AND_MEM = 0x0000
-	SUBTYPE_MEMORY_ONLY = 0x0001
+	# CPU Sub-type bottom-bytes which enable/disable register support
+	SUBTYPE_REG_AND_MEM = 0x00
+	SUBTYPE_MEMORY_ONLY = 0x01
 	
 	def __init__(self, cpu_type, cpu_subtype):
 		"""
 		Define the STUMP system's memory, registers etc.
+		
+		The subtype's bottom byte indicates whether memory and registers are
+		available for debugging. The top byte indicates the number of 16-bit user
+		registers.
 		"""
 		Architecture.__init__(self, cpu_type, cpu_subtype)
 		
@@ -39,8 +43,12 @@ class STUMP(Architecture):
 
 		self.memories.append(memory)
 		
-		if cpu_subtype != STUMP.SUBTYPE_MEMORY_ONLY:
+		if (cpu_subtype & 0xFF) != STUMP.SUBTYPE_MEMORY_ONLY:
 			self._define_registers(memory)
+		
+		num_user_registers = ((cpu_subtype>>8) & 0xFF)
+		if num_user_registers:
+			self._define_user_registers(num_user_registers)
 	
 	
 	def _define_registers(self, memory):
@@ -92,4 +100,23 @@ class STUMP(Architecture):
 		
 		self.register_banks.append(RegisterBank(["Registers", "Reg",
 		                                         "registers", "reg"], registers))
+
+	def _define_user_registers(self, num_user_registers):
+		"""
+		Define the extra user registers.
+		"""
+		registers = []
+		
+		# Define R0
+		for num in range(num_user_registers):
+			registers.append(Register(
+				[s%num for s in ["User%d", "U%d",
+				                 "user%d", "u%d"]],
+				16,      # 16-bits wide
+				9 + num, # At address 9 in the register address space onwards
+				None)    # Don't display a pointer (we don't know what the value is)
+			)
+		
+		self.register_banks.append(RegisterBank(["Signals", "Sig",
+		                                         "signals", "sig"], registers))
 
