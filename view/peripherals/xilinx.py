@@ -252,6 +252,10 @@ class Spartan3(gtk.VBox, PeripheralWidget):
 		Add a row to the table containing a label with the text provieded in label
 		and a pair of widgets in the given row.
 		"""
+		size_group = gtk.SizeGroup(gtk.SIZE_GROUP_HORIZONTAL)
+		size_group.add_widget(widget1)
+		size_group.add_widget(widget2)
+		
 		label_widget = gtk.Label(label)
 		self.table.attach(label_widget, 0, 1, row, row+1,
 		                  xoptions=gtk.FILL, yoptions=gtk.FILL)
