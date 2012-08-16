@@ -37,8 +37,17 @@ class ControlBar(gtk.VBox):
 		# A list of widgets which are disabled when the processor is busy
 		self.disabled_on_busy = []
 		
+		# A list of widgets which are disabled when no assemblers are available
+		self.disabled_on_no_assembler = []
+		
+		# A list of widgets which are disabled when no loaders are available
+		self.disabled_on_no_loader = []
+		
 		# Maps a peripheral widget to a tuple (tool_item, menu_item)
 		self.periphs = {}
+		
+		# The keyboard shortcuts defined by this widget
+		self.accelerators = gtk.AccelGroup()
 		
 		# Add the menubar
 		self.menubar = gtk.MenuBar()
@@ -63,14 +72,14 @@ class ControlBar(gtk.VBox):
 		self.auto_refresh_button = self._make_menu_item("Auto Refresh", check = True)
 		self.auto_refresh_button.connect("toggled", self._on_auto_refresh_toggled)
 		device_submenu = self._make_menu((
-			("Select New Target",  gtk.STOCK_CONNECT, self._on_select_target_clicked),
+			("Select New Target", gtk.STOCK_CONNECT, self._on_select_target_clicked, "<Control>n"),
 			None,
-			("Device Info",    gtk.STOCK_INFO,        self._on_info_clicked),
+			("Device Info", gtk.STOCK_INFO, self._on_info_clicked, "<Control>i"),
 			None,
-			("Refresh Now",    gtk.STOCK_REFRESH,     self._on_refresh_clicked),
+			("Refresh Now", gtk.STOCK_REFRESH, self._on_refresh_clicked, "<Control>r"),
 			self.auto_refresh_button,
 			None,
-			("Quit",           gtk.STOCK_QUIT,        self._on_quit_clicked),
+			("Quit", gtk.STOCK_QUIT, self._on_quit_clicked, "<Control>w"),
 		))
 		
 		device_menu = self._make_menu_item("Device")
@@ -78,9 +87,9 @@ class ControlBar(gtk.VBox):
 		self.menubar.append(device_menu)
 		
 		self.assemble_menu_btn   = self._make_menu_item("Assemble",  gtk.STOCK_CONVERT)
-		self.reassemble_menu_btn = self._make_menu_item("Ressemble", gtk.STOCK_REFRESH)
+		self.reassemble_menu_btn = self._make_menu_item("Ressemble", gtk.STOCK_REFRESH, accelerator = "F3")
 		self.load_menu_btn   = self._make_menu_item("Load Image",    gtk.STOCK_GO_DOWN)
-		self.reload_menu_btn = self._make_menu_item("Reload Image",  gtk.STOCK_REFRESH)
+		self.reload_menu_btn = self._make_menu_item("Reload Image", gtk.STOCK_REFRESH, accelerator = "F4")
 		self.assemble_menu_btn.connect("activate",   self._on_select_source_file_clicked)
 		self.reassemble_menu_btn.connect("activate", self._on_assemble_clicked)
 		self.load_menu_btn.connect("activate",       self._on_select_image_file_clicked)
@@ -96,17 +105,47 @@ class ControlBar(gtk.VBox):
 		program_menu.set_submenu(program_submenu)
 		self.menubar.append(program_menu)
 		
+		self.disabled_on_no_assembler.append(self.assemble_menu_btn)
+		self.disabled_on_no_assembler.append(self.reassemble_menu_btn)
 		
-		self.pause_menu_btn = self._make_menu_item("Pause", check = True)
+		self.disabled_on_no_loader.append(self.load_menu_btn)
+		self.disabled_on_no_loader.append(self.reload_menu_btn)
+		
+		self.reset_menu_btn = self._make_menu_item("Reset",
+			gtk.STOCK_REFRESH, accelerator = "F2")
+		self.run_menu_btn = self._make_menu_item("Run",
+			gtk.STOCK_MEDIA_PLAY, accelerator = "F5")
+		self.stop_menu_btn = self._make_menu_item("Stop",
+			gtk.STOCK_MEDIA_STOP, accelerator =  "F6")
+		self.step_menu_btn = self._make_menu_item("Step",
+			gtk.STOCK_MEDIA_NEXT, accelerator =  "F7")
+		self.multi_step_menu_btn = self._make_menu_item("Multi-Step",
+			gtk.STOCK_MEDIA_FORWARD, accelerator =  "F8")
+		self.pause_menu_btn = self._make_menu_item("Pause",
+			check = True, accelerator="F9")
+		
+		self.reset_menu_btn.connect("activate", self._on_reset_clicked)
+		self.run_menu_btn.connect("activate", self._on_run_clicked)
+		self.stop_menu_btn.connect("activate", self._on_stop_clicked)
+		self.step_menu_btn.connect("activate", self._on_step_clicked)
+		self.multi_step_menu_btn.connect("activate", self._on_multi_step_clicked)
 		self.pause_menu_btn.connect("toggled", self._on_pause_clicked)
+		
+		self.disabled_on_busy.append(self.reset_menu_btn)
+		self.disabled_on_busy.append(self.run_menu_btn)
+		self.disabled_on_busy.append(self.stop_menu_btn)
+		self.disabled_on_busy.append(self.step_menu_btn)
+		self.disabled_on_busy.append(self.multi_step_menu_btn)
+		self.disabled_on_busy.append(self.pause_menu_btn)
+		
 		control_submenu = self._make_menu((
-			("Reset", gtk.STOCK_REFRESH, self._on_reset_clicked),
+			self.reset_menu_btn,
 			None,
-			("Run", gtk.STOCK_MEDIA_PLAY, self._on_run_clicked),
-			("Stop", gtk.STOCK_MEDIA_STOP, self._on_stop_clicked),
+			self.run_menu_btn,
+			self.stop_menu_btn,
 			None,
-			("Step", gtk.STOCK_MEDIA_NEXT, self._on_step_clicked),
-			("Multi-Step", gtk.STOCK_MEDIA_FORWARD, self._on_multi_step_clicked),
+			self.step_menu_btn,
+			self.multi_step_menu_btn,
 			self.pause_menu_btn,
 		))
 		control_menu = self._make_menu_item("Control")
@@ -114,8 +153,8 @@ class ControlBar(gtk.VBox):
 		self.menubar.append(control_menu)
 		
 		window_submenu = self._make_menu((
-			("New Memory Viewer",   gtk.STOCK_NEW, self._on_new_memory_viewer_clicked),
-			("New Register Viewer", gtk.STOCK_NEW, self._on_new_register_viewer_clicked),
+			("New Memory Viewer",   gtk.STOCK_NEW, self._on_new_memory_viewer_clicked, "<Control>m"),
+			("New Register Viewer", gtk.STOCK_NEW, self._on_new_register_viewer_clicked, "<Control>r"),
 		))
 		window_menu = self._make_menu_item("Window")
 		window_menu.set_submenu(window_submenu)
@@ -151,6 +190,9 @@ class ControlBar(gtk.VBox):
 		self.load_btn = self._add_menu_button("Load", gtk.STOCK_GO_DOWN, load_submenu,
 		                                      self._on_load_clicked,
 		                                      "Load memory image onto device")
+		
+		self.disabled_on_no_assembler.append(self.assemble_btn)
+		self.disabled_on_no_loader.append(self.load_btn)
 		
 		self._add_separator()
 		
@@ -229,16 +271,22 @@ class ControlBar(gtk.VBox):
 	
 	
 	
-	def _make_menu_item(self, item, icon_stock_id = None, icon = None, check = False):
+	def _make_menu_item(self, item, icon_stock_id = None, icon = None, check = False, accelerator = None):
 		"""
 		Create a MenuItem (or CheckMenuItem) with the given text and icon_stock_id.
 		"""
+		if accelerator is not None:
+			key,mod = gtk.accelerator_parse(accelerator)
+		
 		# Create the menu item
 		if check:
 			menu_item = gtk.CheckMenuItem()
 		else:
 			menu_item = gtk.ImageMenuItem()
 			menu_item.set_always_show_image(True)
+		
+		if accelerator is not None:
+			menu_item.add_accelerator("activate", self.accelerators, key,mod, gtk.ACCEL_VISIBLE)
 		
 		menu_item.set_label(item)
 		
@@ -249,7 +297,7 @@ class ControlBar(gtk.VBox):
 		
 		if icon is not None:
 			menu_item.set_image(icon)
-			
+		
 		return menu_item
 	
 	
@@ -263,9 +311,14 @@ class ControlBar(gtk.VBox):
 			if item is None:
 				menu.append(gtk.SeparatorMenuItem())
 			elif type(item) is tuple:
-				item, icon_stock_id, callback = item
+				if len(item) == 3:
+					item, icon_stock_id, callback = item
+					accelerator = None
+				elif len(item) == 4:
+					item, icon_stock_id, callback, accelerator = item
 				
-				menu_item = self._make_menu_item(item, icon_stock_id)
+				menu_item = self._make_menu_item(item, icon_stock_id,
+				                                 accelerator = accelerator)
 				
 				# Add callback and add to the menu
 				menu_item.connect("activate", callback)
@@ -723,12 +776,10 @@ class ControlBar(gtk.VBox):
 			can_load = len(memories) > 0
 			can_assemble = len(sum((m.assemblers for m in memories), [])) > 0
 		
-		self.assemble_btn.set_sensitive(can_assemble)
-		self.assemble_menu_btn.set_sensitive(can_assemble)
-		self.reassemble_menu_btn.set_sensitive(can_assemble)
+		for widget in self.disabled_on_no_assembler:
+			widget.set_sensitive(can_assemble)
 		
-		self.load_btn.set_sensitive(can_load)
-		self.load_menu_btn.set_sensitive(can_load)
-		self.reload_menu_btn.set_sensitive(can_load)
+		for widget in self.disabled_on_no_loader:
+			widget.set_sensitive(can_load)
 		
 		self.refresh()
