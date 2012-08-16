@@ -72,7 +72,7 @@ class ControlBar(gtk.VBox):
 		self.auto_refresh_button = self._make_menu_item("Auto Refresh", check = True)
 		self.auto_refresh_button.connect("toggled", self._on_auto_refresh_toggled)
 		device_submenu = self._make_menu((
-			("Select New Target", gtk.STOCK_CONNECT, self._on_select_target_clicked, "<Control>n"),
+			("Select New Target", gtk.STOCK_DISCONNECT, self._on_select_target_clicked, "<Control>n"),
 			None,
 			("Device Info", gtk.STOCK_INFO, self._on_info_clicked, "<Control>i"),
 			None,
