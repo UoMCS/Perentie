@@ -959,8 +959,8 @@ class MemoryTableViewer(gtk.Table):
 		# Run remainder in GTK thread
 		yield
 		
-		# Upadte address step size
-		self.addr_step = memory_table_data[0][1]
+		# Upadte address step size (enusre its at least one)
+		self.addr_step = max(1, memory_table_data[0][1])
 		
 		# The row which should be selected
 		selected_row = None
