@@ -48,7 +48,7 @@ class AssemblerLoaderMixin(object):
 		# XXX: TODO: Allow a choice of assemblers and memories for now chose the
 		# default
 		memory = self.architecture.memories[0]
-		assember, _ = memory.assemblers[0]
+		assember = memory.assemblers[0]
 		
 		try:
 			self.image_filename = assember.assemble(self.source_filename)

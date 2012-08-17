@@ -6,7 +6,8 @@ Memory parameter container.
 
 class Memory(object):
 	
-	def __init__(self, index, names, addr_width_bits, word_width_bits, assemblers = None, size = None):
+	def __init__(self, index, names, addr_width_bits, word_width_bits,
+	             assemblers = None, disassemblers = None, size = None):
 		"""
 		A memory in a system.
 		
@@ -31,6 +32,7 @@ class Memory(object):
 		self.addr_width_bits = addr_width_bits
 		self.word_width_bits = word_width_bits
 		self.assemblers      = assemblers or []
+		self.disassemblers   = disassemblers or []
 		self.size            = size or (1<<addr_width_bits)
 	
 	

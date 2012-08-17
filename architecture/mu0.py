@@ -31,7 +31,8 @@ class MU0(Architecture):
 			 "memory", "mem"],   # Names for the main/only memory
 			12,                  # 12-bit addresses
 			16,                  # 16-bit memory words
-			[(MU0Assembler(), MU0Disassembler())]) # Use the MU0 (dis)assembler
+			[MU0Assembler()],    # Use the MU0 assembler
+			[MU0Disassembler()]) # Use the MU0 disassembler
 		
 		self.memories.append(memory)
 		

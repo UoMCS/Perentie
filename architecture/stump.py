@@ -39,7 +39,8 @@ class STUMP(Architecture):
 			 "memory", "mem"],     # Names for the main/only memory
 			16,                    # 16-bit address bus
 			16,                    # 16-bit memory words
-			[(STUMPAssembler(), STUMPDisassembler())]) # Use the STUMP (dis)assembler
+			[STUMPAssembler()],    # Use the STUMP assembler
+			[STUMPDisassembler()]) # Use the STUMP disassembler
 
 		self.memories.append(memory)
 		

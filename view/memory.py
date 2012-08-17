@@ -219,7 +219,7 @@ class SingleMemoryViewer(gtk.VBox):
 		self.memory_tables = []
 		
 		# Add each disassembler supported by the memory
-		for (assembler, disassembler) in self.memory.assemblers:
+		for disassembler in self.memory.disassemblers:
 			# If no disassembly table has been selected, chose this one (the first)
 			if self.table_disassembly is None:
 				self.table_disassembly = len(self.memory_tables)
