@@ -425,7 +425,7 @@ class Spartan3(gtk.VBox, PeripheralWidget):
 		# Run the downloader in the background
 		yield
 		
-		# Reload the file incase it has changed
+		# Reload the file in case it has changed
 		self.load_file(self.filename)
 		
 		with self.data_lock:
@@ -435,7 +435,7 @@ class Spartan3(gtk.VBox, PeripheralWidget):
 			yield (0, 1)
 			
 			try:
-				for progress in self.system.periph_download(self.periph_num, self.data):
+				for progress in self.system.periph_download_(self.periph_num, self.data):
 					# Report progress
 					yield (progress, data_length)
 			except Exception, e:
@@ -470,7 +470,7 @@ class Spartan3(gtk.VBox, PeripheralWidget):
 		with self.data_lock:
 			try:
 				# Send a blank bit-file to erase the FPGA.
-				for _ in self.system.periph_download(self.periph_num, "\x00"):
+				for _ in self.system.periph_download_(self.periph_num, ""):
 					pass
 			except Exception, e:
 				# Something bad happened and the download failed.

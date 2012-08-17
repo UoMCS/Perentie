@@ -616,7 +616,6 @@ class BackEnd(object):
 		Yields the amount of data sent every packet.
 		"""
 		assert(num >= 0)
-		assert(len(data) > 0)
 		
 		# Send the header
 		self.write(byte(BackEnd.PERIPH_DOWNLOAD_HEADER))
@@ -637,6 +636,7 @@ class BackEnd(object):
 			length = len(packet)
 			sent  += length
 			
+			# Send a packet
 			self.write(byte(BackEnd.PERIPH_DOWNLOAD_PACKET))
 			self.write(byte(num))
 			self.write(byte(length))

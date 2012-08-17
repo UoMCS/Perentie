@@ -450,7 +450,7 @@ class DeviceMixin(object):
 				return ""
 	
 	
-	def periph_download(self, num, data):
+	def periph_download_(self, num, data):
 		"""
 		Download some data into a peripheral.
 		Yields the amount of data sent every time a packet is sent. Raises an
@@ -460,6 +460,21 @@ class DeviceMixin(object):
 		"""
 		with self.device_lock:
 			self.assert_not_killed()
+			self.resync()
 			
 			for progress in self.back_end.periph_download_(num, data):
 				yield progress
+	
+	
+	def periph_download(self, num, data):
+		"""
+		Download some data into a peripheral all in one go.
+		"""
+		with self.device_lock:
+			self.assert_not_killed()
+			self.resync()
+			
+			try:
+				self.back_end.periph_download(num, data)
+			except BackEndError, e:
+				self.log(e)

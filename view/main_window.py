@@ -297,7 +297,7 @@ class MainWindow(gtk.Window):
 		"""
 		Destroy a periph_widget and disconnect everything.
 		"""
-		periph_window = periph_widget.get_parent_window()
+		periph_window = periph_widget.get_parent()
 		
 		# Disconnect all the adjustments
 		adjustments = periph_widget.get_progress_adjustments()
@@ -402,8 +402,7 @@ class MainWindow(gtk.Window):
 		Close this window and re-show the initial target selection window.
 		"""
 		for viewer in self.memory_viewers + self.register_viewers + self.periph_viewers:
-			# XXX: Peripheral widgets don't seem to like get_parent_window...
-			window = viewer.get_parent_window() or viewer.get_parent()
+			window = viewer.get_parent()
 			window.destroy()
 		
 		# Stop the refresh timer
