@@ -50,3 +50,25 @@ def format_ascii(value, width_bits, char_width = 8):
 
 def formatted_number_to_int(value):
 	return int(value, 16)
+
+
+def format_storage_size(value_bits):
+	"""
+	Takes a size in bits and returns a string with the largest possible postfix.
+	"""
+	divisors = (
+		(1, "b"),
+		(8, "B"),
+		(1024, "KB"),
+		(1024, "MB"),
+		(1024, "GB"),
+		(1024, "TB"),
+	)
+	
+	last_postfix = None
+	for divisor, postfix in divisors:
+		if value_bits % divisor == 0:
+			value_bits /= divisor
+			last_postfix = postfix
+		else:
+			return "%d %s"%(value_bits, last_postfix)

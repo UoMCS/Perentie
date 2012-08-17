@@ -156,7 +156,7 @@ class MemoryWordTable(MemoryTable):
 
 class DisassemblyTable(MemoryTable):
 	
-	def __init__(self, system, memory, assembler, disassembler, align = True):
+	def __init__(self, system, memory, disassembler, align = True):
 		"""
 		A MemoryTable which simply fetches blocks of the given number of memory
 		words with no additional data.
@@ -169,7 +169,6 @@ class DisassemblyTable(MemoryTable):
 		"""
 		MemoryTable.__init__(self, system, memory, align)
 		
-		self.assembler    = assembler
 		self.disassembler = disassembler
 	
 	
@@ -195,7 +194,7 @@ class DisassemblyTable(MemoryTable):
 			try:
 				# Try and assemble the instruction
 				# XXX: TODO: Add symbol table
-				value = self.assembler.assemble_instruction(new_data, length, addr)
+				value = self.disassembler.assemble_instruction(new_data, length, addr)
 				self.system.write_memory(self.memory, length, addr, [value])
 			except Exception, e:
 				# Some assembler error

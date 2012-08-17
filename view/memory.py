@@ -227,7 +227,7 @@ class SingleMemoryViewer(gtk.VBox):
 			self.memory_tables.append(("Disassembly (%s)"%disassembler.name,
 			                          DisassemblyTable(self.system,
 			                                           self.memory,
-			                                           assembler, disassembler)))
+			                                           disassembler)))
 		
 		# Names of element sizes which may be displayed
 		size_names = {}

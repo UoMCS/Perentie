@@ -650,7 +650,7 @@ class ControlBar(gtk.VBox):
 			window.set_transient_for(self.get_parent().get_parent())
 			window.add(self.device_info_viewer)
 			window.set_title("Device Information")
-			window.show_all()
+			window.set_default_size(450, 550)
 			
 			def on_dismiss(widget):
 				window.destroy()
@@ -658,68 +658,7 @@ class ControlBar(gtk.VBox):
 			self.device_info_viewer.connect("dismissed", on_dismiss)
 			window.connect("destroy", on_dismiss)
 			
-		#info_string  = ""
-		#info_string += "<b>Architecture</b>:\n"
-		#info_string += "  %s\n"%(
-		#	self.system.architecture.name
-		#	if self.system.architecture is not None
-		#	else "<i>(Unknown)</i>")
-		#info_string += "  ID/Sub-ID: %02X/%04X)\n"%(
-		#	self.system.cpu_type,
-		#	self.system.cpu_subtype)
-		#info_string += "  Target Type: %s\n"%self.system.back_end.name
-		#info_string += "\n"
-		#
-		#info_string += "<b>Register Banks:</b>\n"
-		#if self.system.architecture is not None:
-		#	for register_bank in self.system.architecture.register_banks:
-		#		info_string += "  %s (aka <i>%s</i>):\n"%(
-		#			register_bank.name,
-		#			", ".join(register_bank.names[1:]),
-		#		)
-		#		for register in register_bank.registers:
-		#			info_string += "    %d-bit %s Register %s (aka <i>%s</i>)\n"%(
-		#				register.width_bits,
-		#				"Integer" if register.bit_field is None else "Bit-Field",
-		#				register.name,
-		#				", ".join(register.names[1:]),
-		#			)
-		#else:
-		#	info_string += "  <i>(Unknown)</i>\n"
-		#info_string += "\n"
-		#
-		#info_string += "<b>Memories:</b>\n"
-		#if self.system.architecture is not None:
-		#	for memory in self.system.architecture.memories:
-		#		info_string += "  %s (aka <i>%s</i>):\n"%(
-		#			memory.name, ", ".join(memory.names[1:]),)
-		#		info_string += "    %d-bit addresses\n"%(memory.addr_width_bits)
-		#		info_string += "    %d-bit minmum-addressable blocks\n"%(memory.word_width_bits)
-		#		info_string += "    %d blocks (%d bytes)\n"%(
-		#			memory.size, (memory.word_width_bits * memory.size)/8)
-		#else:
-		#	info_string += "  <i>(Unknown)</i>\n"
-		#info_string += "\n"
-		#
-		#info_string += "<b>Peripherals:</b>\n"
-		#if self.periphs:
-		#	for periph_widget in self.periphs:
-		#		info_string += "  %s (%s):\n"%(
-		#			periph_widget.get_short_name(),
-		#			periph_widget.get_name())
-		#		info_string += "    Number: %d\n"%(periph_widget.periph_num)
-		#		info_string += "    ID/Sub-ID: %02X/%04X\n"%(
-		#			periph_widget.periph_id, periph_widget.periph_sub_id)
-		#else:
-		#	info_string += "  <i>(None)</i>\n"
-		#
-		#info_dialog = gtk.MessageDialog(buttons = gtk.BUTTONS_OK)
-		#info_dialog.set_title("Device Info")
-		#info_dialog.set_markup(info_string)
-		#info_dialog.set_destroy_with_parent(True)
-		#
-		#info_dialog.run()
-		#info_dialog.destroy()
+			window.show_all()
 	
 	
 	def _on_refresh_clicked(self, btn):

@@ -141,6 +141,21 @@ class BitField(object):
 	
 	
 	@property
+	def field_ranges(self):
+		"""
+		Get the ranges of each field
+		"""
+		ranges = []
+		for field_type, field in zip(self.field_types, self.fields):
+			if field_type == BitField.BIT:
+				ranges.append([[field[0]]])
+			else:
+				ranges.append(field[0])
+		
+		return ranges
+	
+	
+	@property
 	def field_types(self):
 		"""
 		List of field types that are contained in the register. One of:
