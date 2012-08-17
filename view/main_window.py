@@ -7,6 +7,8 @@ appropriate view windows.
 
 import gtk, glib, gobject
 
+import about
+
 from background import RunInBackground
 
 from placeholder      import Placeholder
@@ -485,10 +487,11 @@ class MainWindow(gtk.Window):
 		architecture-specific changes which need to be made to the GUI.
 		"""
 		# Set the window title
-		self.set_title("%sDebugger (%s)"%(
+		self.set_title("%s%s (%s)"%(
 			("%s "%self.system.architecture.name
 			 if self.system.architecture is not None
 			 else ""),
+			 about.NAME,
 			self.system.back_end.name
 		))
 		

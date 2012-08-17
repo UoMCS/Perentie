@@ -9,6 +9,7 @@ import gtk, gobject
 
 from background  import RunInBackground
 from device_info import DeviceInfoViewer
+from about       import AboutDialog
 
 
 class ControlBar(gtk.VBox):
@@ -164,13 +165,19 @@ class ControlBar(gtk.VBox):
 		window_menu.set_submenu(window_submenu)
 		self.menubar.append(window_menu)
 		
-		# The separator before the peripherals
 		self.periph_submenu = gtk.Menu()
 		self.periph_menu = self._make_menu_item("Peripherals")
 		self.periph_menu.set_submenu(self.periph_submenu)
 		self.periph_menu.set_no_show_all(True)
 		self.periph_menu.hide()
 		self.menubar.append(self.periph_menu)
+		
+		help_submenu = self._make_menu((
+			("About", gtk.STOCK_ABOUT, self._on_about_clicked),
+		))
+		help_menu = self._make_menu_item("Help")
+		help_menu.set_submenu(help_submenu)
+		self.menubar.append(help_menu)
 	
 	
 	def _init_toolbar(self):
@@ -659,6 +666,21 @@ class ControlBar(gtk.VBox):
 			window.connect("destroy", on_dismiss)
 			
 			window.show_all()
+	
+	
+	def _on_about_clicked(self, btn):
+		about_dialog = AboutDialog()
+		# XXX: Getting a refrence to the top-level main window I can't see any
+		# other way of doing it than knowing how many levels of container we're
+		# in...
+		about_dialog.set_transient_for(self.get_parent().get_parent())
+		
+		def close_dialog(*args):
+			about_dialog.destroy()
+		about_dialog.connect("response", close_dialog)
+		about_dialog.connect("close", close_dialog)
+		
+		about_dialog.show_all()
 	
 	
 	def _on_refresh_clicked(self, btn):
