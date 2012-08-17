@@ -595,6 +595,7 @@ class ControlBar(gtk.VBox):
 		"""
 		Multi-Step button clicked: Execute a number of steps in the spin box
 		"""
+		self.multi_step_spin.update()
 		self.multi_step_spin.activate()
 	
 	
