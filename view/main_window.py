@@ -266,6 +266,7 @@ class MainWindow(gtk.Window):
 		"""
 		periph_widget = PeripheralWidget(self.system, periph_num,
 		                                 periph_id, periph_sub_id)
+		periph_widget.connect("global-refresh", self._on_device_state_changed)
 		
 		self.periph_viewers.append(periph_widget)
 		
@@ -331,7 +332,7 @@ class MainWindow(gtk.Window):
 				# A viewer already been created for this widget, make sure its
 				# peripheral number is up-to-date
 				index = cur_periph_ids.index((periph_id, periph_sub_id))
-				self.periph_viewers[index].periph_num = periph_num
+				self.periph_viewers[index].architecture_changed(periph_num)
 				
 				# Widget has been updated
 				cur_periph_ids[index] = None
@@ -473,7 +474,8 @@ class MainWindow(gtk.Window):
 		self.memory_viewer_top.refresh()
 		self.memory_viewer_btm.refresh()
 		
-		for viewer in self.memory_viewers + self.register_viewers:
+		# Update all viewer widgeglobal-refresh
+		for viewer in self.memory_viewers + self.register_viewers + self.periph_viewers:
 			viewer.refresh()
 	
 	

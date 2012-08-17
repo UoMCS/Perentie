@@ -603,14 +603,14 @@ class BackEnd(object):
 		return self.read_exactly(length * element_size)
 	
 	
-	def peripheral_download(self, num, data):
+	def periph_download(self, num, data):
 		"""
 		Download some data into a peripheral (aka feature).
 		"""
-		for _ in self.peripheral_download_(num, data):
+		for _ in self.periph_download_(num, data):
 			pass
 	
-	def peripheral_download_(self, num, data):
+	def periph_download_(self, num, data):
 		"""
 		Download some data into a peripheral (aka feature).
 		Yields the amount of data sent every packet.

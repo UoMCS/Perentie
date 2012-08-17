@@ -318,6 +318,7 @@ class DeviceMixin(object):
 			self.assert_not_killed()
 			
 			try:
+				self.resync()
 				self.back_end.reset()
 			except BackEndError, e:
 				self.log(e)
@@ -331,10 +332,11 @@ class DeviceMixin(object):
 			self.assert_not_killed()
 			
 			try:
+				self.resync()
 				self.back_end.run(max_steps,
-													halt_on_watchpoint, halt_on_breakpoint, halt_on_mem_fault,
-													step_over_swi, step_over_bl,
-													break_on_first_instruction)
+				                  halt_on_watchpoint, halt_on_breakpoint, halt_on_mem_fault,
+				                  step_over_swi, step_over_bl,
+				                  break_on_first_instruction)
 			except BackEndError, e:
 				self.log(e)
 	
@@ -344,6 +346,7 @@ class DeviceMixin(object):
 			self.assert_not_killed()
 			
 			try:
+				self.resync()
 				self.back_end.stop_execution()
 			except BackEndError, e:
 				self.log(e)
@@ -354,6 +357,7 @@ class DeviceMixin(object):
 			self.assert_not_killed()
 			
 			try:
+				self.resync()
 				self.back_end.pause_execution()
 			except BackEndError, e:
 				self.log(e)
@@ -364,6 +368,7 @@ class DeviceMixin(object):
 			self.assert_not_killed()
 			
 			try:
+				self.resync()
 				self.back_end.continue_execution()
 			except BackEndError, e:
 				self.log(e)
@@ -378,13 +383,74 @@ class DeviceMixin(object):
 			self.assert_not_killed()
 			
 			try:
+				self.resync()
 				return self.back_end.get_status()
 			except BackEndError, e:
 				self.log(e)
 				return (DeviceMixin.STATUS_ERROR, -1, -1)
 	
 	
-	def peripheral_download(self, num, data):
+	def periph_get_status(self, periph_num):
+		"""
+		Get the status of the peripheral as a 32-bit integer.
+		"""
+		with self.device_lock:
+			self.assert_not_killed()
+			
+			try:
+				self.resync()
+				return self.back_end.periph_get_status(periph_num)
+			except BackEndError, e:
+				self.log(e)
+				return -1
+	
+	
+	def periph_set_status(self, periph_num, new_status):
+		"""
+		Get the status of the peripheral as a 32-bit integer.
+		"""
+		with self.device_lock:
+			self.assert_not_killed()
+			
+			try:
+				self.resync()
+				self.back_end.periph_set_status(periph_num, new_status)
+			except BackEndError, e:
+				self.log(e)
+	
+	
+	def periph_send_message(self, periph_num, message):
+		"""
+		Send a short message to the device. Returns the number of bytes accepted.
+		"""
+		with self.device_lock:
+			self.assert_not_killed()
+			
+			try:
+				self.resync()
+				return self.back_end.periph_send_message(periph_num, message)
+			except BackEndError, e:
+				self.log(e)
+				return 0
+	
+	
+	def periph_get_message(self, periph_num, max_length):
+		"""
+		Request a short message from the device of up to max_length bytes long.
+		Returns the data recieved.
+		"""
+		with self.device_lock:
+			self.assert_not_killed()
+			
+			try:
+				self.resync()
+				return self.back_end.periph_get_message(periph_num, max_length)
+			except BackEndError, e:
+				self.log(e)
+				return ""
+	
+	
+	def periph_download(self, num, data):
 		"""
 		Download some data into a peripheral.
 		Yields the amount of data sent every time a packet is sent. Raises an
@@ -395,5 +461,5 @@ class DeviceMixin(object):
 		with self.device_lock:
 			self.assert_not_killed()
 			
-			for progress in self.back_end.peripheral_download_(num, data):
+			for progress in self.back_end.periph_download_(num, data):
 				yield progress

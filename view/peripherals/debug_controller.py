@@ -6,10 +6,11 @@ Peripheral widgets for xilinx devices.
 
 from os.path   import dirname, join
 
-import gtk, pango
+import gtk, pango, gobject
 
 from base         import PeripheralWidget
 from ..background import RunInBackground
+from ..format     import *
 
 
 
@@ -17,6 +18,11 @@ class DebugController(gtk.Notebook, PeripheralWidget):
 	"""
 	A widget for controlling a design running on an attached FPGA.
 	"""
+	
+	__gsignals__ = {
+		# Emitted when the peripheral viewer would like the whole UI to be refreshed
+		'global-refresh': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, tuple()),
+	}
 	
 	# Filenames of icons of various sizes for the widget
 	ICON_FILENAMES = {
@@ -79,6 +85,7 @@ class DebugController(gtk.Notebook, PeripheralWidget):
 		                        xoptions = gtk.FILL|gtk.EXPAND, yoptions = gtk.FILL)
 		
 		self.clock_btn = gtk.Button("Pulse Clock")
+		self.clock_btn.connect("clicked", self._on_clock_btn_clicked)
 		self.clock_table.attach(self.clock_btn, 0,2, 2,3,
 		                        xoptions = gtk.FILL|gtk.EXPAND, yoptions = gtk.FILL|gtk.EXPAND)
 	
@@ -110,7 +117,9 @@ class DebugController(gtk.Notebook, PeripheralWidget):
 		self.memory_data_in = gtk.Label("0x0000")
 		self.memory_table.attach(self.memory_data_in, 1,2, 1,2,
 		                         xoptions = gtk.FILL|gtk.EXPAND, yoptions = gtk.FILL)
-		self.read_enable = gtk.ToggleButton("Read Enable")
+		self.read_enable = gtk.Label()
+		self.read_enable.set_alignment(0.0,0.5)
+		self.read_enable.set_width_chars(15)
 		self.memory_table.attach(self.read_enable, 2,3, 1,2,
 		                         xoptions = gtk.FILL|gtk.EXPAND, yoptions = gtk.FILL)
 		
@@ -121,7 +130,9 @@ class DebugController(gtk.Notebook, PeripheralWidget):
 		self.memory_data_out = gtk.Label("0x0000")
 		self.memory_table.attach(self.memory_data_out, 1,2, 2,3,
 		                         xoptions = gtk.FILL|gtk.EXPAND, yoptions = gtk.FILL)
-		self.write_enable = gtk.ToggleButton("Write Enable")
+		self.write_enable = gtk.Label()
+		self.write_enable.set_alignment(0.0,0.5)
+		self.write_enable.set_width_chars(15)
 		self.memory_table.attach(self.write_enable, 2,3, 2,3,
 		                         xoptions = gtk.FILL|gtk.EXPAND, yoptions = gtk.FILL)
 	
@@ -151,3 +162,61 @@ class DebugController(gtk.Notebook, PeripheralWidget):
 	
 	def get_short_name(self):
 		return "Debug"
+	
+	
+	@RunInBackground()
+	def _on_clock_btn_clicked(self, btn):
+		"""
+		Callback on clicking the clock button. Request that the clock be toggled.
+		"""
+		
+		# Write any old status
+		self.system.periph_set_status(self.periph_num, 0)
+		
+		# Trigger a refresh since we may have updated the cycle count
+		yield
+		self.emit("global-refresh")
+	
+	
+	@RunInBackground()
+	def refresh(self):
+		"""
+		Refresh the status displays
+		"""
+		state = self.system.periph_get_status(self.periph_num)
+		
+		# Get the requested memory address, read data and write data (3 16-bit
+		# numbers)
+		mem_info = self.system.periph_get_message(self.periph_num, 2*3)
+		
+		# Decode into 16-bit values
+		if len(mem_info) == 2*3:
+			values = []
+			i = iter(map(ord, mem_info))
+			for lsb, msb in zip(i,i):
+				values.append(lsb | (msb<<8))
+		else:
+			values = [0,0,0]
+		
+		# Update GUI in GTK thread
+		yield
+		
+		# Clock & fetch state
+		self.fetch_cycles.set_text(str(state&0xFF))
+		self.fetch_signal.set_markup("<b>High</b>" if state&0x400 else "Low")
+		
+		# Read/write enables
+		self.read_enable.set_markup("Read Enable " +
+		                            ("<b>High</b>"
+		                             if state&0x100
+		                             else "Low"))
+		self.write_enable.set_markup("Write Enable "+
+		                             ("<b>High</b>"
+		                              if state&0x200
+		                              else "Low"))
+		
+		# Memory Addresses & Data
+		addr, data_in, data_out = values
+		self.memory_addr.set_markup("<tt>%s</tt>"%format_number(addr, 16))
+		self.memory_data_in.set_markup("<tt>%s</tt>"%format_number(data_in, 16))
+		self.memory_data_out.set_markup("<tt>%s</tt>"%format_number(data_out, 16))

@@ -2,9 +2,15 @@
 
 """
 The base class upon which peripheral viewing widgets should be built.
+
+Each class should also implement the global-refresh signal (with no arguments)!
 """
 
 class PeripheralWidget(object):
+	
+	# Note:
+	# Each class should also implement the global-refresh signal (with no
+	# arguments)!
 	
 	def __init__(self, system, periph_num, periph_id, periph_sub_id):
 		"""
@@ -48,3 +54,19 @@ class PeripheralWidget(object):
 		return []
 	
 	
+	def refresh(self):
+		"""
+		Called whenever the widget should refresh its contents.
+		"""
+		pass
+	
+	
+	def architecture_changed(self, periph_num):
+		"""
+		Called whenever the system's architecture has changed. The peripheral number
+		within the new architecture is also given.
+		
+		Note that the widget is destroyed if the architecture changes to one which
+		has a different type/subtype.
+		"""
+		self.periph_num = periph_num

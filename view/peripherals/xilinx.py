@@ -10,7 +10,7 @@ from threading import Lock
 from ..background       import RunInBackground
 from ..progress_monitor import ProgressMonitor
 
-import gtk, pango
+import gtk, pango, gobject
 
 from base import PeripheralWidget
 
@@ -73,6 +73,11 @@ class Spartan3(gtk.VBox, PeripheralWidget):
 	"""
 	A widget for controlling an attached spartan-3 FPGA.
 	"""
+	
+	__gsignals__ = {
+		# Emitted when the peripheral viewer would like the whole UI to be refreshed
+		'global-refresh': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, tuple()),
+	}
 	
 	# Filenames of icons of various sizes for the widget
 	ICON_FILENAMES = {
@@ -368,10 +373,10 @@ class Spartan3(gtk.VBox, PeripheralWidget):
 		Display the metadata for the current file and fpga contents.
 		"""
 		with self.data_lock:
-			fpga_filename_text = self.fpga_filename or "(None)"
+			fpga_filename_text = self.fpga_filename or "(Unknown)"
 			
 			design_name_text      = self.design_name      or "(None)"
-			fpga_design_name_text = self.fpga_design_name or "(None)"
+			fpga_design_name_text = self.fpga_design_name or "(Unknown)"
 			
 			if self.device_name is not None:
 				if self.device_name == self.get_model(short_version = True):
@@ -381,7 +386,7 @@ class Spartan3(gtk.VBox, PeripheralWidget):
 			else:
 				device_name_text = "(None)"
 			
-			fpga_device_name_text = self.fpga_design_name or "(None)"
+			fpga_device_name_text = self.fpga_design_name or "(Unknown)"
 			
 			if self.datestamp is not None and self.timestamp is not None:
 				timestamp_text = "%s %s"%(self.datestamp, self.timestamp)
@@ -391,7 +396,7 @@ class Spartan3(gtk.VBox, PeripheralWidget):
 			if self.fpga_datestamp is not None and self.fpga_timestamp is not None:
 				fpga_timestamp_text = "%s %s"%(self.fpga_datestamp, self.fpga_timestamp)
 			else:
-				fpga_timestamp_text = "(None)"
+				fpga_timestamp_text = "(Unknown)"
 			
 			data_valid = self.data is not None and len(self.data) > 0
 		
@@ -430,7 +435,7 @@ class Spartan3(gtk.VBox, PeripheralWidget):
 			yield (0, 1)
 			
 			try:
-				for progress in self.system.peripheral_download(self.periph_num, self.data):
+				for progress in self.system.periph_download(self.periph_num, self.data):
 					# Report progress
 					yield (progress, data_length)
 			except Exception, e:
@@ -465,7 +470,7 @@ class Spartan3(gtk.VBox, PeripheralWidget):
 		with self.data_lock:
 			try:
 				# Send a blank bit-file to erase the FPGA.
-				for _ in self.system.peripheral_download(self.periph_num, "\x00"):
+				for _ in self.system.periph_download(self.periph_num, "\x00"):
 					pass
 			except Exception, e:
 				# Something bad happened and the download failed.
