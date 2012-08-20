@@ -214,20 +214,27 @@ class EvaluatorMixin(object):
 		Given some python code, add a prefix to all numbers with no existing
 		base-prefix. May prevent access to certain variables who's names happen to
 		be valid hex strings. Also prevents the use of the leading-zero octal
-		syntax.
+		syntax when not using decimal (i.e. prefix="") which is probably what you
+		want.
 		
 		This uses the python tokeniser to help find all the literals and then stick
 		the appropriate prefix on them. The major catch here is that for hex numbers
 		the tokeniser may chop it into number and name parts (as the lack of a
-		prefix could make it look like a variable). As a result we need to detect
-		when this happens and stick them back together as a number field with a
-		propper prefix.
+		prefix could make it look like a load of numbers and variable names). As a
+		result we need to detect when this happens and stick them back together as a
+		number field with a propper prefix.
 		"""
+		if new_prefix == "":
+			# Why bother? Also means we don't need scary special cases later to allow
+			# leading-zero octal syntax when in decimal mode.
+			return expr
+		
 		# The ordered set of (type, string) tokens from which a new string will be
 		# generated.
 		out_tokens = []
 		
-		# A list of previous tokens which might be concatenated with a following set
+		# A list of previous tokens which might be concatenated with a following
+		# set. A list of tuples (type, str, end_char_index).
 		prv_tokens = []
 		
 		def cat_tokens(prv_tokens):
