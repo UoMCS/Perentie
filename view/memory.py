@@ -565,7 +565,7 @@ class MemoryTableViewer(gtk.Table):
 		"""
 		# Hide horizontal scrollbar when not needed
 		adj = self.tree_view.get_hadjustment()
-		scroll_needed = adj.get_upper() != adj.get_value() + adj.get_page_size()
+		scroll_needed = (adj.get_lower()+adj.get_page_size()) != adj.get_upper()
 		if scroll_needed:
 			self.hscrollbar.show()
 		else:
