@@ -158,14 +158,13 @@ class DisassemblyTable(MemoryTable):
 	
 	def __init__(self, system, memory, disassembler, align = True):
 		"""
-		A MemoryTable which simply fetches blocks of the given number of memory
-		words with no additional data.
+		A MemoryTable which uses the given disassembler to produce a disassembly.
 		
 		disassembler is the Disassembler to use
 		
 		align indicates whether displayed rows should be aligned to instructions
 		(True) or whether rows should start from the requested address exactly
-		(False). Not currently supported: all assemblers output aligned.
+		(False). Not currently supported: all disassemblers output aligned.
 		"""
 		MemoryTable.__init__(self, system, memory, align)
 		
@@ -223,3 +222,109 @@ class DisassemblyTable(MemoryTable):
 			out.append((addr, width_bits/self.memory.word_width_bits, [formatted, mnemonic]))
 		
 		return out
+
+
+
+class SourceTable(DisassemblyTable):
+	
+	def __init__(self, system, memory, disassembler, align = True, full_source = False):
+		"""
+		A MemoryTable which attempts to use the source annotations from the loaded
+		image file where possible and falls back to the supplied disassembler (if
+		not None) otherwise.
+		
+		disassembler is the Disassembler to use
+		
+		align indicates whether displayed rows should be aligned to instructions
+		(True) or whether rows should start from the requested address exactly
+		(False). Not currently supported: all disassemblers output aligned.
+		
+		full_source specifies whether all source lines are shown, even when they all
+		correspond to a single address.
+		"""
+		DisassemblyTable.__init__(self, system, memory, disassembler, align)
+		
+		self.full_source = full_source
+	
+	
+	def get_columns(self):
+		return [("Instruction", True), ("Source", False)]
+	
+	
+	def set_cell(self, addr, row, column, new_data):
+		if column != 0:
+			raise Exception("Shouldn't get here: Can't set source values!")
+		else:
+			return DisassemblyTable.set_cell(self, addr, row, column, new_data)
+	
+	
+	def get_data(self, addr, num_rows):
+		addr = self.mask_addr(addr)
+		out = []
+		
+		while len(out) < num_rows:
+			addr = self.mask_addr(addr)
+			if addr in self.system.image_source:
+				# The address is available in the source listing
+				num_words, value, source_lines = self.system.image_source[addr]
+				
+				# Get the current value out of memory
+				cur_value = self.system.read_memory(self.memory, num_words, addr, 1)[0]
+				
+				formatted = format_number(cur_value, self.memory.word_width_bits * num_words)
+				
+				# If they match, use the source here! (if not, fall through and use the
+				# disassembler)
+				if value == cur_value:
+					if self.full_source:
+						for line in source_lines:
+							out.append((addr, num_words, [formatted, line]))
+					else:
+						# Just show the last source line
+						out.append((addr, num_words, [formatted, source_lines[-1]]))
+					
+					# Increment the address
+					addr += num_words
+					continue
+			
+			if self.disassembler is not None:
+				# The address isn't available in the source listing. Fall back to the
+				# disassembler. Try to get just a single row.
+				d_addr, d_num_words, (formatted, mnemonic) = DisassemblyTable.get_data(
+					self, addr, 1)[0]
+				
+				if d_addr != addr:
+					# The disassembler has aligned itself to some other address. Because we
+					# don't know how the source listing is aligned, we can assume the
+					# disassembler works the same way. As a result, we can try and align to
+					# this address and give the source listing another shot.
+					#
+					# If the aligned flag is set, we can behave in an "aligned" way by not
+					# adding these lines to the output if they're the first ones (thus
+					# jumping straight to the first disassembly). If the aligned flag isn't
+					# set, we should show these memory words.
+					if not (self.align and len(out) == 0):
+						for addr in range(addr, d_addr):
+							value = self.system.read_memory(self.memory, 1, addr, 1)[0]
+							out.append((addr, 1, [format_number(value, self.memory.word_width_bits), ""]))
+					
+					# Continue from the address the disassembler wanted
+					addr = d_addr
+					continue
+				
+				else:
+					# The disassembler has a solution, return it
+					out.append((d_addr, d_num_words, [formatted, mnemonic]))
+					addr = d_addr + d_num_words
+					continue
+			
+			else:
+				# No disassembler, just put the values in
+				value = self.system.read_memory(self.memory, 1, addr, 1)[0]
+				out.append((addr, 1, [format_number(value, self.memory.word_width_bits), ""]))
+				addr += 1
+				continue
+		
+		# In case there is an excessive number of source lines added when in
+		# full_source mode, chop them off.
+		return out[:num_rows]

@@ -18,7 +18,7 @@ from background import RunInBackground
 
 from placeholder import Placeholder
 
-from _memory_table import MemoryWordTable, DisassemblyTable
+from _memory_table import MemoryWordTable, DisassemblyTable, SourceTable
 from _annotation   import RegisterAnnotation
 
 
@@ -220,14 +220,55 @@ class SingleMemoryViewer(gtk.VBox):
 		
 		# Add each disassembler supported by the memory
 		for disassembler in self.memory.disassemblers:
+			# Separator
+			if len(self.memory_tables) > 0:
+				self.memory_tables.append(("", None))
+			
 			# If no disassembly table has been selected, chose this one (the first)
 			if self.table_disassembly is None:
 				self.table_disassembly = len(self.memory_tables)
 			
+			# Source Listing
+			self.memory_tables.append(("Source (%s)"%disassembler.name,
+			                          SourceTable(self.system,
+			                                      self.memory,
+			                                      disassembler,
+			                                      full_source = False)))
+			
+			# Full (all-lines) Source Listing
+			self.memory_tables.append(("Full Source (%s)"%disassembler.name,
+			                          SourceTable(self.system,
+			                                      self.memory,
+			                                      disassembler,
+			                                      full_source = True)))
+			
+			# Pure disassembly
 			self.memory_tables.append(("Disassembly (%s)"%disassembler.name,
 			                          DisassemblyTable(self.system,
 			                                           self.memory,
 			                                           disassembler)))
+		# Separator
+		if len(self.memory_tables) > 0:
+			self.memory_tables.append(("", None))
+		
+		# If no disassembly table has been selected, chose a non-disassembled (one
+		# with no disassembly, just source)
+		if self.table_disassembly is None:
+			self.table_disassembly = len(self.memory_tables)
+		
+		# Source Listing
+		self.memory_tables.append(("Source (No Disassembly)",
+		                          SourceTable(self.system,
+		                                      self.memory,
+		                                      None,
+		                                      full_source = False)))
+		
+		# Full (all-lines) Source Listing
+		self.memory_tables.append(("Full Source (No Disassembly)",
+		                          SourceTable(self.system,
+		                                      self.memory,
+		                                      None,
+		                                      full_source = True)))
 		
 		# Names of element sizes which may be displayed
 		size_names = {}
@@ -256,8 +297,7 @@ class SingleMemoryViewer(gtk.VBox):
 				continue
 			
 			# Separator
-			if len(self.memory_tables) > 0:
-				self.memory_tables.append(("", None))
+			self.memory_tables.append(("", None))
 			
 			# Get the human-friendly size name
 			size_name = size_names[elem_size_bits]

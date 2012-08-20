@@ -12,6 +12,15 @@ class AssemblerLoaderMixin(object):
 	def __init__(self):
 		self.source_filename = None
 		self.image_filename  = None
+		
+		# Relates addresses to (width_words, value, source_lines) where width_words
+		# is the number of memory words covered by the source, value is the integer
+		# value in memory at this position and source_lines is a list of strings
+		# containing a line of source code
+		self.image_source = {}
+		
+		# A dictionary relating symbol names to values
+		self.image_symbols = {}
 	
 	
 	def set_source_filename(self, filename):
@@ -149,6 +158,10 @@ class AssemblerLoaderMixin(object):
 			if ext not in loaders:
 				raise Exception("Images in %s format not supported."%ext)
 			loader = loaders[ext]
+			
+			# Clear the source/symbol lists
+			self.image_source  = {}
+			self.image_symbols = {}
 			
 			# Load the image
 			return loader(memory, open(self.image_filename, "r").read())
