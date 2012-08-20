@@ -351,6 +351,9 @@ class RegisterBankViewer(gtk.VBox):
 			it = self.register_list_model.get_iter(row)
 			self.register_list_model.set(it, 1, formatted)
 			self.register_list_model.set(it, 2, ascii)
+			
+			# Update the column sizes
+			self.register_list.columns_autosize()
 		
 		elif register in self.bit_registers:
 			# Find the bit field editor
@@ -368,26 +371,6 @@ class RegisterBankViewer(gtk.VBox):
 			
 			# Pass on the request to the bit-field editor
 			editor.set_value(value)
-	
-	
-	def get_register(self, register):
-		"""
-		Get the value of a register in the display given a register object.
-		"""
-		if register in self.int_registers:
-			# Get the value from the list
-			it = self.register_list_model.get_iter(self.int_registers.index(register))
-			value = self.register_list_model.get(it, 1)
-			
-			return formatted_number_to_int(value)
-		
-		elif register in self.bit_registers:
-			# Find the bit field editor
-			index  = self.bit_registers.index(register)
-			editor = self.bit_notebook.get_nth_page(index)
-			
-			# Pass on the request to the bit-field editor
-			return editor.get_value()
 	
 	
 	@RunInBackground()

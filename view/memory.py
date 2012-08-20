@@ -1022,3 +1022,6 @@ class MemoryTableViewer(gtk.Table):
 			# case otherwise we'd kill their editor.
 			self.selection.select_path(selected_row)
 		self.selection.handler_unblock_by_func(self._on_selection_change)
+		
+		# Resize columns
+		self.tree_view.columns_autosize()
