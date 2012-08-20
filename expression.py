@@ -16,8 +16,25 @@ Available variables:
 * reg_name (for register bank 0 registers only)
 """
 
+import re
+
 from collections import namedtuple
+from tokenize    import generate_tokens, untokenize, NAME, NUMBER
+from StringIO    import StringIO
+
 from util.lazy   import as_needed
+
+from view import format
+
+################################################################################
+
+# Regexes which match parts of numbers in various bases
+BASE_CHARS = {
+	"0x": re.compile("^[0-9a-f]+$", re.I),
+	"":   re.compile("^[0-9]+$", re.I),
+	"0o": re.compile("^[0-7]+$", re.I),
+	"0b": re.compile("^[01]+$", re.I),
+}
 
 ################################################################################
 
@@ -192,10 +209,81 @@ class EvaluatorMixin(object):
 				self.evaluator_local_vars[name] = register_bank_tuple
 	
 	
+	def _change_default_base(self, expr, new_prefix):
+		"""
+		Given some python code, add a prefix to all numbers with no existing
+		base-prefix. May prevent access to certain variables who's names happen to
+		be valid hex strings. Also prevents the use of the leading-zero octal
+		syntax.
+		
+		This uses the python tokeniser to help find all the literals and then stick
+		the appropriate prefix on them. The major catch here is that for hex numbers
+		the tokeniser may chop it into number and name parts (as the lack of a
+		prefix could make it look like a variable). As a result we need to detect
+		when this happens and stick them back together as a number field with a
+		propper prefix.
+		"""
+		# The ordered set of (type, string) tokens from which a new string will be
+		# generated.
+		out_tokens = []
+		
+		# A list of previous tokens which might be concatenated with a following set
+		prv_tokens = []
+		
+		def cat_tokens(prv_tokens):
+			"""
+			Concatenate all tokens in prv_tokens prepending them with the new_prefix.
+			"""
+			# The string, without leading zeros.
+			no_padding = ("".join(tok[1] for tok in prv_tokens)).lstrip("0").zfill(1)
+			out_tokens.append((NUMBER, "%s%s"%(new_prefix, no_padding)))
+		
+		for token in generate_tokens(StringIO(expr).readline):
+			# Break appart the token fields
+			token_type, string, (_,start), (_,end), _ = token
+			
+			# See if we can cat the token onto the currently built up input (and
+			# continue if we manage)
+			if token_type in (NAME, NUMBER) and BASE_CHARS[new_prefix].match(string):
+				# We have a potential piece of a number (as bits of hex numbers might
+				# get picked up as a name)
+				
+				if len(prv_tokens) == 0 and string[:2].lower() not in ("0x","0o","0b"):
+					# This is the first part of a number and it isn't already prefixed
+					prv_tokens.append((token_type, string, end))
+					continue
+				elif (len(prv_tokens) > 0
+				      and prv_tokens[-1][2] == start):
+					# This token touches the previous one! Looks good!
+					prv_tokens.append((token_type, string, end))
+					continue
+			
+			# Fall-through to here if not able to built up a number
+			
+			# Cat together any tokens previously built up
+			if prv_tokens:
+				cat_tokens(prv_tokens)
+				prv_tokens = []
+			
+			# Put the current token into the output
+			out_tokens.append((token_type, string))
+		
+		# Cat the remaining tokens on the queue
+		if prv_tokens:
+			cat_tokens(prv_tokens)
+		
+		return untokenize(out_tokens)
+	
+	
 	def evaluate(self, expr):
 		"""
 		Evaluate an expression within the context of the system. Expressions should
 		be valid python expressions with various variables defined.
 		"""
+		
+		# When the prefix is not shown, change the prefix of non-prefixed numbers to
+		# the current prefix
+		if not format.format_show_prefix:
+			expr = self._change_default_base(expr, format.format_prefix)
 		
 		return int(eval(expr, self.evaluator_global_vars, self.evaluator_local_vars))

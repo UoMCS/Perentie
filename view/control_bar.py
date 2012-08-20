@@ -7,6 +7,8 @@ A GTK+ toolbar + menu bar for controling a system.
 
 import gtk, gobject
 
+import format
+
 from background  import RunInBackground
 from device_info import DeviceInfoViewer
 from about       import AboutDialog
@@ -157,9 +159,38 @@ class ControlBar(gtk.VBox):
 		control_menu.set_submenu(control_submenu)
 		self.menubar.append(control_menu)
 		
+		self.base_bin_btn = self._make_menu_item("Binary", radio = True)
+		self.base_oct_btn = self._make_menu_item("Octal", radio = True,
+		                                         group = self.base_bin_btn)
+		self.base_dec_btn = self._make_menu_item("Decimal", radio = True,
+		                                         group = self.base_bin_btn)
+		self.base_hex_btn = self._make_menu_item("Hexadecimal", radio = True,
+		                                         group = self.base_bin_btn)
+		
+		self.base_bin_btn.connect("toggled", self._on_base_changed, 2)
+		self.base_oct_btn.connect("toggled", self._on_base_changed, 8)
+		self.base_dec_btn.connect("toggled", self._on_base_changed, 10)
+		self.base_hex_btn.connect("toggled", self._on_base_changed, 16)
+		
+		if format.format_base   == 2:  self.base_bin_btn.set_active(True)
+		elif format.format_base == 8:  self.base_oct_btn.set_active(True)
+		elif format.format_base == 10: self.base_dec_btn.set_active(True)
+		elif format.format_base == 16: self.base_hex_btn.set_active(True)
+		
+		
+		self.base_prefix_btn = self._make_menu_item("Show Base Prefix", check = True)
+		self.base_prefix_btn.connect("toggled", self._on_base_prefix_btn_toggled)
+		self.base_prefix_btn.set_active(format.format_show_prefix)
 		window_submenu = self._make_menu((
 			("New Memory Viewer",   gtk.STOCK_NEW, self._on_new_memory_viewer_clicked, "<Control>m"),
 			("New Register Viewer", gtk.STOCK_NEW, self._on_new_register_viewer_clicked, "<Control>r"),
+			None,
+			self.base_bin_btn,
+			self.base_oct_btn,
+			self.base_dec_btn,
+			self.base_hex_btn,
+			None,
+			self.base_prefix_btn,
 		))
 		window_menu = self._make_menu_item("Window")
 		window_menu.set_submenu(window_submenu)
@@ -282,9 +313,11 @@ class ControlBar(gtk.VBox):
 	
 	
 	
-	def _make_menu_item(self, item, icon_stock_id = None, icon = None, check = False, accelerator = None):
+	def _make_menu_item(self, item, icon_stock_id = None, icon = None,
+	                    check = False, radio = False, group = None,
+	                    accelerator = None):
 		"""
-		Create a MenuItem (or CheckMenuItem) with the given text and icon_stock_id.
+		Create a MenuItem (or Radio/CheckMenuItem) with the given text and icon_stock_id.
 		"""
 		if accelerator is not None:
 			key,mod = gtk.accelerator_parse(accelerator)
@@ -292,6 +325,8 @@ class ControlBar(gtk.VBox):
 		# Create the menu item
 		if check:
 			menu_item = gtk.CheckMenuItem()
+		elif radio:
+			menu_item = gtk.RadioMenuItem(group)
 		else:
 			menu_item = gtk.ImageMenuItem()
 			menu_item.set_always_show_image(True)
@@ -697,6 +732,24 @@ class ControlBar(gtk.VBox):
 	
 	def _on_new_register_viewer_clicked(self, btn):
 		self.emit("new-register-viewer-clicked")
+	
+	
+	def _on_base_changed(self, btn, base):
+		"""
+		Change the base of the formatted fields
+		"""
+		if btn.get_active():
+			format.set_base(base)
+		
+		self.emit("device-state-changed")
+	
+	def _on_base_prefix_btn_toggled(self, btn):
+		"""
+		Enable/disable the prefix in formatted values.
+		"""
+		format.set_show_prefix(btn.get_active())
+		
+		self.emit("device-state-changed")
 	
 	
 	@RunInBackground()
