@@ -81,7 +81,7 @@ class ControlBar(gtk.VBox):
 			None,
 			("Device Info", gtk.STOCK_INFO, self._on_info_clicked, "<Control>i"),
 			None,
-			("Refresh Now", gtk.STOCK_REFRESH, self._on_refresh_clicked, "<Control>r"),
+			("Refresh Now", gtk.STOCK_REFRESH, self._on_refresh_clicked, "F1"),
 			self.auto_refresh_button,
 			None,
 			("Quit", gtk.STOCK_QUIT, self._on_quit_clicked, "<Control>w"),
