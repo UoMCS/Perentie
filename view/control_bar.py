@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-A GTK+ toolbar for controling a system.
+A GTK+ toolbar + menu bar for controling a system.
 """
 
 
