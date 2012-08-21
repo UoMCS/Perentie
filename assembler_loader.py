@@ -78,19 +78,20 @@ class AssemblerLoaderMixin(object):
 			for line in data.strip().split("\n"):
 				addr, val = map(str.strip, line.split(":"))
 				
-				val,_,src = map(str.strip, val.partition(";"))
+				val,has_source,src = map(str.strip, val.partition(";"))
 				
 				addr = int(addr.split()[-1], 16)
 				
 				# XXX: Assumes that each entry has exactly one word
-				if addr not in image_source:
-					image_source[addr] = (1,
-					                      int(val,16) if val else 0,
-					                      [src])
-				else:
-					image_source[addr] = (image_source[addr][0],
-					                      image_source[addr][1] if not val else int(val, 16),
-					                      image_source[addr][2] + [src])
+				if has_source:
+					if addr not in image_source:
+						image_source[addr] = (1,
+						                      int(val,16) if val else 0,
+						                      [src])
+					else:
+						image_source[addr] = (image_source[addr][0],
+						                      image_source[addr][1] if not val else int(val, 16),
+						                      image_source[addr][2] + [src])
 				
 				if val != "":
 					to_write[addr] = [int(val, 16)]
