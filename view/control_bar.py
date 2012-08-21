@@ -518,6 +518,17 @@ class ControlBar(gtk.VBox):
 		                                   gtk.STOCK_OPEN, gtk.RESPONSE_OK)
 		)
 		
+		file_filter = gtk.FileFilter()
+		file_filter.set_name("Assembly File (*.s)")
+		file_filter.add_pattern("*.s")
+		
+		all_filter = gtk.FileFilter()
+		all_filter.set_name("All Files")
+		all_filter.add_pattern("*.*")
+		
+		selection.add_filter(file_filter)
+		selection.add_filter(all_filter)
+		
 		if selection.run() == gtk.RESPONSE_OK:
 			self.system.set_source_filename(selection.get_filename())
 			self._on_reassemble_clicked(btn)
