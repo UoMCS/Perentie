@@ -304,7 +304,17 @@ class DebugController(gtk.Notebook, PeripheralWidget):
 		yield
 		
 		# Clock & fetch state
-		self.fetch_cycles.set_text(str(state&0xFF))
+		cycles = state&0xFF
+		if cycles == 0xFF:
+			self.fetch_cycles.set_markup("<b>Timeout!</b>")
+			if not self.fetch_cycles.get_tooltip_text():
+				self.fetch_cycles.set_tooltip_text(
+					"The maximum number of cycles without a fetch (255) was reached, " +
+					"the processor has been stopped.")
+		else:
+			self.fetch_cycles.set_text(str(cycles))
+			self.fetch_cycles.set_tooltip_text(None)
+		
 		self.fetch_signal.set_markup("<b>High</b>" if state&0x400 else "Low")
 		
 		# Read/write enables
