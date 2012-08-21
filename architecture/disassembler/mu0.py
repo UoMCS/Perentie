@@ -48,7 +48,7 @@ class MU0Disassembler(Disassembler):
 					mnemonic += " 0x%03X"%(argument)
 			else:
 				# Unknown instruction
-				mnemonic = "(unknown)"
+				mnemonic = ""
 			
 			disassembly.append((start_addr, 16, instr, mnemonic))
 			
