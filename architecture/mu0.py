@@ -4,7 +4,7 @@
 MU0 specific definition of a system.
 """
 
-from base import Architecture
+from arm_hostable import ARMHostable
 
 from register import RegisterBank, Register, Pointer, BitField
 from memory   import Memory
@@ -13,19 +13,19 @@ from disassembler.mu0 import MU0Disassembler
 from assembler.mu0    import MU0Assembler
 
 
-class MU0(Architecture):
+class MU0(ARMHostable):
 	
 	def __init__(self, *args, **kwargs):
 		"""
 		Define the MU0 system's memory, registers etc.
 		"""
-		Architecture.__init__(self, *args, **kwargs)
+		ARMHostable.__init__(self, *args, **kwargs)
 		
 		self.name = "MU0"
 		
 		self.word_width_bits = 16
 		
-		memory = Memory(
+		self.memory = Memory(
 			0,                   # The zeroth and only memory
 			["Memory", "Mem",
 			 "memory", "mem"],   # Names for the main/only memory
@@ -34,7 +34,14 @@ class MU0(Architecture):
 			[MU0Assembler()],    # Use the MU0 assembler
 			[MU0Disassembler()]) # Use the MU0 disassembler
 		
-		self.memories.append(memory)
+		self.memories.append(self.memory)
+		
+		self._define_all_registers()
+	
+	
+	def _define_registers(self):
+		# Save some typing...
+		memory = self.memory
 		
 		self.register_banks.append(RegisterBank(["Registers", "Reg",
 		                                         "registers", "reg"], [
