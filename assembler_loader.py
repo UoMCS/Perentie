@@ -74,16 +74,29 @@ class AssemblerLoaderMixin(object):
 		try:
 			# Parse the input file
 			to_write = {}
+			image_source = {}
 			for line in data.strip().split("\n"):
 				addr, val = map(str.strip, line.split(":"))
 				
-				val = val.split(";")[0].strip()
+				val,_,src = map(str.strip, val.partition(";"))
 				
 				addr = int(addr.split()[-1], 16)
 				
+				# XXX: Assumes that each entry has exactly one word
+				if addr not in image_source:
+					image_source[addr] = (1,
+					                      int(val,16) if val else 0,
+					                      [src])
+				else:
+					image_source[addr] = (image_source[addr][0],
+					                      image_source[addr][1] if not val else int(val, 16),
+					                      image_source[addr][2] + [src])
+				
 				if val != "":
-					# XXX: Assumes that each entry has exactly one word
 					to_write[addr] = [int(val, 16)]
+			
+			# Set the source listing
+			self.image_source[memory] = image_source
 			
 			# Write the data to the memory
 			length = len(to_write)

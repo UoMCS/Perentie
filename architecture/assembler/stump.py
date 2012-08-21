@@ -18,6 +18,13 @@ class STUMPAssembler(Assembler):
 	
 	
 	def assemble(self, input_filename):
+		# Get the output filename
+		# Chop off the .s (as sasm does)
+		filename, ext = os.path.splitext(input_filename)
+		if ext != ".s":
+			filename += ext
+		output_filename = "%s.lst"%filename
+		
 		# Start the assembler as a child-process (Capture stderr for errors)
 		args = ["sasm", input_filename, "-l"]
 		assembler = Popen(args, stderr = PIPE)
@@ -29,10 +36,15 @@ class STUMPAssembler(Assembler):
 		if return_code != 0:
 			raise Exception("Assembly Failed:\n%s"%errors)
 		
-		# Get the output filename
-		# Chop off the .s (as sasm does)
-		filename, ext = os.path.splitext(input_filename)
-		if ext != ".s":
-			filename += ext
+		# Stick the source in the comment at the end of each listing line. SASM
+		# produces list files which correspond line-for-line with the source
+		src = open(input_filename,"r").read().split("\n")
+		lst = open(output_filename,"r").read().split("\n")
 		
-		return "%s.lst"%filename
+		lst_file = open(output_filename,"w")
+		for src_line, lst_line in zip(src,lst):
+			if lst_line.strip():
+				lst_file.write("%s;%s\n"%(lst_line, src_line))
+		lst_file.close()
+		
+		return output_filename
