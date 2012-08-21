@@ -9,6 +9,8 @@ from base import Architecture
 from register import RegisterBank, Register, Pointer, BitField
 from memory   import Memory
 
+from assembler.arm import ARMAssembler
+
 
 class ARM(Architecture):
 	
@@ -28,7 +30,8 @@ class ARM(Architecture):
 			 "memory", "mem"],     # Names for the main/only memory
 			32,                    # 32-bit address bus
 			8,                     # 8-bit memory words
-			[])                    # TODO: Add assembler/disassembler
+			[ARMAssembler()],      # Use the ARM assembler
+			[])                    # TODO: add a disassembler
 
 		self.memories.append(memory)
 		

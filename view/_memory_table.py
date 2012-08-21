@@ -262,11 +262,14 @@ class SourceTable(DisassemblyTable):
 		addr = self.mask_addr(addr)
 		out = []
 		
+		# Get the source for this memory
+		image_source = self.system.image_source.get(self.memory, {})
+		
 		while len(out) < num_rows:
 			addr = self.mask_addr(addr)
-			if addr in self.system.image_source:
+			if addr in image_source:
 				# The address is available in the source listing
-				num_words, value, source_lines = self.system.image_source[addr]
+				num_words, value, source_lines = image_source[addr]
 				
 				# Get the current value out of memory
 				cur_value = self.system.read_memory(self.memory, num_words, addr, 1)[0]

@@ -13,13 +13,14 @@ class AssemblerLoaderMixin(object):
 		self.source_filename = None
 		self.image_filename  = None
 		
-		# Relates addresses to (width_words, value, source_lines) where width_words
-		# is the number of memory words covered by the source, value is the integer
-		# value in memory at this position and source_lines is a list of strings
-		# containing a line of source code
+		# Relates memories to dicts which relate addresses to (width_words, value,
+		# source_lines) where width_words is the number of memory words covered by
+		# the source, value is the integer value in memory at this position and
+		# source_lines is a list of strings containing a line of source code
 		self.image_source = {}
 		
-		# A dictionary relating symbol names to values
+		# A dictionary relating memories to dicts mapping symbol names to (value,
+		# type) pairs.
 		self.image_symbols = {}
 	
 	
@@ -94,6 +95,82 @@ class AssemblerLoaderMixin(object):
 			self.log(e, flag = True)
 	
 	
+	def _load_kmd(self, memory, data):
+		"""
+		Load .kmd format data into the given memory. Returns a generator that yields
+		tuples (amount_read, total) indicating progress.
+		"""
+		# The number of nybles per memory word
+		word_nybles = memory.word_width_bits/4
+		
+		try:
+			# Check for the magic number
+			if data[:4] != "KMD\n":
+				raise Exception("KMD file magic number missing!")
+			data = data[4:]
+			
+			# The symbol and data tables are seperated by an empty line
+			data,_, symbol_data = data.partition("\n\n")
+			
+			# Parse the input file
+			to_write = {}
+			image_source = {}
+			image_symbols = {}
+			for line in data.strip().split("\n"):
+				addr_str,_, val_src = map(str.strip, line.partition(":"))
+				
+				try:
+					addr = int(addr_str, 16)
+				except ValueError:
+					# We have a line where the source was wrapped and thus there is no
+					# address
+					val_src = addr_str
+				
+				vals,_, src      = map(str.strip, val_src.partition(";"))
+				
+				# Remove spaces between units
+				vals = vals.split(" ")
+				
+				# Add the source line to
+				if addr not in image_source:
+					image_source[addr] = (sum(map(len, vals))/word_nybles,
+					                      int("".join(vals) or "0", 16),
+					                      [src])
+				else:
+					image_source[addr] = (image_source[addr][0] + sum(map(len, vals))/word_nybles,
+					                      image_source[addr][1] if not vals else int("".join(vals) or "0", 16) ,
+					                      image_source[addr][2] + [src])
+				
+				# Warning: This will silently drop words which are smaller than a memory
+				# word
+				for val in vals:
+					width_words = len(val)/word_nybles
+					val         = int(val, 16) if width_words else 0
+					for word in range(width_words):
+						to_write[addr] = val>>(word*memory.word_width_bits) & ((1<<memory.word_width_bits)-1)
+						addr += 1
+			
+			# Parse the symbol table
+			for line in symbol_data.strip().split("\n")[1:]:
+				line_parts = line.split(" ")
+				symbol = line_parts[1]
+				value,_,symbol_type = (" ".join(line_parts[2:])).lstrip(" ").partition("  ")
+				image_symbols[symbol] = (int(value, 16), symbol_type)
+			
+			# Store the source & symbols
+			self.image_source[memory]  = image_source
+			self.image_symbols[memory] = image_symbols
+			
+			# Write the data to the memory
+			length = len(to_write)
+			for num, (addr, value) in enumerate(to_write.iteritems()):
+				self.write_memory(memory, 1, addr, [value])
+				yield (num, length)
+			
+		except Exception, e:
+			self.log(e, flag = True)
+	
+	
 	def _load_elf(self, memory, data):
 		"""
 		Load .elf format data into the given memory. Returns a generator that yields
@@ -133,6 +210,7 @@ class AssemblerLoaderMixin(object):
 	def get_loaders(self):
 		return {
 			".lst": self._load_lst,
+			".kmd": self._load_kmd,
 			".elf": self._load_elf,
 		}
 	
@@ -158,10 +236,6 @@ class AssemblerLoaderMixin(object):
 			if ext not in loaders:
 				raise Exception("Images in %s format not supported."%ext)
 			loader = loaders[ext]
-			
-			# Clear the source/symbol lists
-			self.image_source  = {}
-			self.image_symbols = {}
 			
 			# Load the image
 			return loader(memory, open(self.image_filename, "r").read())
