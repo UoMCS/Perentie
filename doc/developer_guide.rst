@@ -127,8 +127,8 @@ System Interface
 The system interface is designed to tie together a back-end with its
 architecture and produce a cleaner interface to the device. This interface is
 used by the GUI for all device interactions. The system interface is defined by
-the System class in system.py. In general, the interfaces provided by the
-system function by examining the architecture model and then taking action
+the System class in the system module. In general, the interfaces provided by
+the system function by examining the architecture model and then taking action
 communicating with the back-end.
 
 Because the features provided by the class are fairly diverse, it is split up
@@ -186,7 +186,8 @@ GUI + Glue
 
 The GUI is defined in terms of a number of specialised widgets which are defined
 in the view package (in the directory of the same name). These widgets provide
-complex UI elements such as memory viewers and control bars.
+complex UI elements such as memory viewers and control bars. GUI elements are
+found in the view module.
 
 The GUI starts with a target selection window (TargetSelection in
 target_selection.py). This window allows the user to select a type of target,
