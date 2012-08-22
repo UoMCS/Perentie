@@ -15,8 +15,8 @@ import gtk, gobject
 from back_end import EmulatorBackEnd, SerialPortBackEnd
 from system   import System
 
-from view.background  import RunInBackground
-from view.main_window import MainWindow
+from background  import RunInBackground
+from main_window import MainWindow
 
 
 class Target(object):

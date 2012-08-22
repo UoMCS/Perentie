@@ -7,7 +7,7 @@ Debugger GUI main executable.
 import sys
 import gtk
 
-from target_selection import TargetSelection
+from view.target_selection import TargetSelection
 
 if __name__=="__main__":
 	# Enable GTK multi-threading support
