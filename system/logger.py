@@ -4,9 +4,10 @@
 An event logger for mixing into the system.
 """
 
-from threading import Lock
-
+import sys
 import traceback
+
+from threading import Lock
 
 class LoggerMixin(object):
 	"""
@@ -42,7 +43,7 @@ class LoggerMixin(object):
 		with self.log_lock:
 			trace = traceback.format_exc()
 			
-			print trace
+			sys.stderr.write(trace)
 			
 			self.event_log.append((exception, trace, flag))
 			

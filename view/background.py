@@ -27,7 +27,7 @@ functions should be designed to die (quickly) when the rest of the system does.
 Example usage can be found in the developer guide.
 """
 
-from sys import stderr
+import sys
 
 from   functools import wraps
 from   threading import Thread, Lock, Event, active_count
@@ -136,7 +136,7 @@ class RunInBackground(object):
 						try:
 							func(*args, **kwargs)
 						except Exception, e:
-							stderr.write("Error:\n" + traceback.format_exc())
+							sys.stderr.write(traceback.format_exc())
 			self.gtk_quit_handler_id = gtk.quit_add(0, on_quit)
 	
 	
@@ -185,7 +185,7 @@ class RunInBackground(object):
 			return (None, None)
 		except Exception, e:
 			# The function crashed, just dump its error and return
-			stderr.write("Error:\n" + traceback.format_exc())
+			sys.stderr.write("Error:\n" + traceback.format_exc())
 			return (None, None)
 	
 	
@@ -227,7 +227,7 @@ class RunInBackground(object):
 				try:
 					func(*args, **kwargs)
 				except Exception, e:
-					stderr.write("Error:\n" + traceback.format_exc())
+					sys.stderr.write("Error:\n" + traceback.format_exc())
 				finally:
 					trigger.set()
 			

@@ -180,6 +180,10 @@ class TargetSelection(gtk.Window):
 		# The commandline option parser
 		self.parser = OptionParser()
 		
+		self.parser.add_option("-v", "--verbose",
+		                       dest = "verbose", action="store_true", default = False,
+		                       help = "Show exceptions on stderr.")
+		
 		# The back-end and system which are being debugged
 		self.back_end = None
 		self.system   = None
@@ -247,6 +251,17 @@ class TargetSelection(gtk.Window):
 		self.show_all()
 	
 	
+	def set_verbose(self, verbose):
+		"""
+		Possibly disable stderr.
+		"""
+		if not verbose:
+			import sys
+			class NullWriter(object):
+				def write(self, data): pass
+			sys.stderr = NullWriter()
+	
+	
 	def handle_argv(self, argv):
 		# Add the target's options to the parser
 		for target in self.targets:
@@ -257,6 +272,11 @@ class TargetSelection(gtk.Window):
 		
 		# Parse the options
 		options, args = self.parser.parse_args(argv)
+		
+		# Set the verbosity of the prgoram
+		self.set_verbose(options.verbose)
+		
+		# Deal with the target's options
 		for target in self.targets:
 			if target.handle_options(options, args):
 				specified_target = target
