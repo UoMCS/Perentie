@@ -2,6 +2,10 @@
 
 """
 Assembler and loader functions provided as a mixin for the System.
+
+The reason filenames are specified in the slightly odd way they are is to allow
+assemblers to set the loader file name in a simple way. Its not ideal but it
+works.
 """
 
 import os
