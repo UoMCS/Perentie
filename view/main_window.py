@@ -470,10 +470,15 @@ class MainWindow(gtk.Window):
 		
 		# Board didn't change, just refresh as-per-usual
 		self.control_bar.refresh()
-		self.register_viewer.refresh()
 		self.status_bar.refresh()
-		self.memory_viewer_top.refresh()
-		self.memory_viewer_btm.refresh()
+		
+		# Don't update the register windows unless we actually have some
+		if self.system.architecture is not None:
+			if self.system.architecture.memories:
+				self.memory_viewer_top.refresh()
+				self.memory_viewer_btm.refresh()
+			if self.system.architecture.register_banks:
+				self.register_viewer.refresh()
 		
 		# Update all viewer widgeglobal-refresh
 		for viewer in self.memory_viewers + self.register_viewers + self.periph_viewers:

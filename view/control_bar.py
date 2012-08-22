@@ -9,9 +9,10 @@ import gtk, gobject
 
 import format
 
-from background  import RunInBackground
-from device_info import DeviceInfoViewer
-from about       import AboutDialog
+from background    import RunInBackground
+from device_info   import DeviceInfoViewer
+from symbol_viewer import SymbolViewer
+from about         import AboutDialog
 
 
 class ControlBar(gtk.VBox):
@@ -40,6 +41,9 @@ class ControlBar(gtk.VBox):
 		
 		# A widget displaying device information
 		self.device_info_viewer = None
+		
+		# A widget showing memory symbols
+		self.symbol_viewer = None
 		
 		# A list of widgets which are disabled when the processor is busy
 		self.disabled_on_busy = []
@@ -101,12 +105,17 @@ class ControlBar(gtk.VBox):
 		self.reassemble_menu_btn.connect("activate", self._on_assemble_clicked)
 		self.load_menu_btn.connect("activate",       self._on_select_image_file_clicked)
 		self.reload_menu_btn.connect("activate",     self._on_load_clicked)
+		
+		self.symbol_viewer_btn = self._make_menu_item("Symbol Viewer", gtk.STOCK_GO_DOWN, accelerator = "<Control>s")
+		self.symbol_viewer_btn.connect("activate", self._on_symbol_viewer_clicked)
 		program_submenu = self._make_menu((
 			self.assemble_menu_btn,
 			self.reassemble_menu_btn,
 			None,
 			self.load_menu_btn,
 			self.reload_menu_btn,
+			None,
+			self.symbol_viewer_btn
 		))
 		program_menu = self._make_menu_item("Program")
 		program_menu.set_submenu(program_submenu)
@@ -567,6 +576,10 @@ class ControlBar(gtk.VBox):
 		# Return to the GTK thread
 		yield
 		
+		# Update the symbol viewer
+		if self.symbol_viewer is not None:
+			self.symbol_viewer.refresh_symbols()
+		
 		self.emit("device-state-changed")
 	
 	
@@ -687,6 +700,34 @@ class ControlBar(gtk.VBox):
 		self.emit("select-target-clicked")
 	
 	
+	def _on_symbol_viewer_clicked(self, btn):
+		"""
+		Show a window with an information viewer in it.
+		"""
+		if self.symbol_viewer is not None:
+			# Raise the window if it is already open
+			self.symbol_viewer.get_parent().present()
+		else:
+			self.symbol_viewer = SymbolViewer(self.system)
+			
+			window = gtk.Window()
+			# XXX: Getting a refrence to the top-level main window I can't see any
+			# other way of doing it than knowing how many levels of container we're
+			# in...
+			window.set_transient_for(self.get_parent().get_parent())
+			window.add(self.symbol_viewer)
+			window.set_title("Symbols")
+			window.set_default_size(450, 550)
+			
+			def on_dismiss(widget):
+				self.symbol_viewer = None
+				window.destroy()
+			window.connect("destroy", on_dismiss)
+			
+			window.show_all()
+			window.present()
+	
+	
 	def _on_info_clicked(self, btn):
 		"""
 		Show a window with an information viewer in it.
@@ -713,6 +754,7 @@ class ControlBar(gtk.VBox):
 			window.connect("destroy", on_dismiss)
 			
 			window.show_all()
+			window.present()
 	
 	
 	def _on_about_clicked(self, btn):
@@ -839,5 +881,8 @@ class ControlBar(gtk.VBox):
 		
 		if self.device_info_viewer is not None:
 			self.device_info_viewer.architecture_changed()
+		
+		if self.symbol_viewer is not None:
+			self.symbol_viewer.architecture_changed()
 		
 		self.refresh()
