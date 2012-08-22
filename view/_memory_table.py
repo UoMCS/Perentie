@@ -271,7 +271,9 @@ class SourceTable(DisassemblyTable):
 				# The address is available in the source listing
 				num_words, value, source_lines = image_source[addr]
 				
-				# Get the current value out of memory
+				# If a zero-word source entry appears, just expand it out to one word
+				num_words = max(num_words, 1)
+				
 				cur_value = self.system.read_memory(self.memory, num_words, addr, 1)[0]
 				
 				formatted = format_number(cur_value, self.memory.word_width_bits * num_words)

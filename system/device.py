@@ -258,6 +258,9 @@ class DeviceMixin(object):
 		as integers of the number of words specified. If a location cannot be read,
 		-1s are returned.
 		"""
+		assert (elem_size_words > 0)
+		assert (length > 0)
+		
 		with self.device_lock:
 			self.assert_not_killed()
 			
@@ -289,6 +292,9 @@ class DeviceMixin(object):
 		"""
 		Write to a memory as given in the Architecture.
 		"""
+		assert (elem_size_words > 0)
+		assert (len(data) > 0)
+		
 		with self.device_lock:
 			self.assert_not_killed()
 			
