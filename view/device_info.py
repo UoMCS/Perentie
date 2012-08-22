@@ -8,7 +8,6 @@ A GTK+ widget which displays information about the connected device.
 import gtk, gobject
 
 from background  import RunInBackground
-from placeholder import Placeholder
 from peripherals import get_peripheral_view
 
 from format import *
