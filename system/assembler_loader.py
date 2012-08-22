@@ -279,8 +279,16 @@ class AssemblerLoaderMixin(object):
 			# Select a loader to use (default to a raw binary)
 			loader = self.get_loaders().get(ext, self._load_bin)
 			
+			# Clear the symbol & source listings
+			self.image_source = {}
+			self.image_symbols = {}
+			
 			# Load the image
-			return loader(memory, open(self.image_filename, "r").read())
+			for val in loader(memory, open(self.image_filename, "r").read()):
+				yield val
+			
+			# Update the symbol list in the evaluator
+			self.evaluator_update_symbols()
 			
 		except Exception, e:
 			self.log(e, flag = True)

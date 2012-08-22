@@ -65,6 +65,9 @@ class EvaluatorMixin(object):
 		
 		# Allow a specific set of locals
 		self.evaluator_local_vars = {}
+		
+		# Symbol values
+		self.evaluator_symbol_vars = {}
 	
 	
 	def init_evaluator(self):
@@ -282,6 +285,16 @@ class EvaluatorMixin(object):
 		return untokenize(out_tokens)
 	
 	
+	def evaluator_update_symbols(self):
+		"""
+		Update the set of symbols.
+		"""
+		self.evaluator_symbol_vars = {}
+		for symbols in self.image_symbols.itervalues():
+			for symbol, (value,symbol_type) in symbols.iteritems():
+				self.evaluator_symbol_vars[symbol] = value
+	
+	
 	def evaluate(self, expr):
 		"""
 		Evaluate an expression within the context of the system. Expressions should
@@ -293,4 +306,8 @@ class EvaluatorMixin(object):
 		if not format.format_show_prefix:
 			expr = self._change_default_base(expr, format.format_prefix)
 		
-		return int(eval(expr, self.evaluator_global_vars, self.evaluator_local_vars))
+		# Add the symbols to the evaluation variables
+		local_vars = self.evaluator_local_vars.copy()
+		local_vars.update(self.evaluator_symbol_vars)
+		
+		return int(eval(expr, self.evaluator_global_vars, local_vars))

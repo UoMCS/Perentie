@@ -31,3 +31,18 @@ class AnnotatorMixin(object):
 					out.append((register_bank, register))
 		
 		return out
+	
+	
+	def get_symbol_pointers(self, memory):
+		"""
+		Get all registers with pointers into the specified memory resulting from
+		registers.
+		
+		Returns a list of (symbol_name, value) tuples
+		"""
+		
+		out = []
+		for symbol_name, (value, symbol_type) in self.image_symbols.get(memory,{}).iteritems():
+			# Do something different for each type...
+			out.append((symbol_name, value))
+		return out

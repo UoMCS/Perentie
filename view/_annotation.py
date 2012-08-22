@@ -80,13 +80,38 @@ class RegisterAnnotation(Annotation):
 		priorities = ["LR", "SP", "PC"]
 		
 		if self.register.pointer.category in priorities:
-			return 10 + priorities.index(self.register.pointer.category)
+			return 11 + priorities.index(self.register.pointer.category)
 		else:
-			return 0
+			return 10
 	
 	
 	def get_tooltip(self):
 		return "%s.%s == <tt>%s</tt>"%(self.register_bank.name,
 		                      self.register.name,
 		                      format_number(self.addr, self.memory.addr_width_bits))
+
+
+
+class SymbolAnnotation(Annotation):
+	
+	def __init__(self, system, memory, addr, symbol_name):
+		Annotation.__init__(self, system, memory, addr)
+		
+		self.symbol_name = symbol_name
+	
+	
+	def get_pointer_pixbuf(self):
+		"""
+		Get an icon for displaying in the memory listing.
+		"""
+		return POINTER_SYMBOL
+	
+	
+	def get_priority(self):
+		return 0
+	
+	
+	def get_tooltip(self):
+		return "%s == <tt>%s</tt>"%(self.symbol_name,
+		                            format_number(self.addr, self.memory.addr_width_bits))
 

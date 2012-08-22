@@ -10,7 +10,7 @@ import gtk
 
 
 def load_pixmap(name):
-	return gtk.gdk.pixbuf_new_from_file(os.path.join(os.curdir, "view", "pixmaps", name))
+	return gtk.gdk.pixbuf_new_from_file(os.path.join(os.path.dirname(__file__), name))
 
 
 # Icons for pointers in memory viewers
@@ -22,3 +22,4 @@ POINTER_SP         = load_pixmap("SP.png")
 POINTER_SP         = load_pixmap("SP.png")
 POINTER_BREAKPOINT = load_pixmap("breakpoint.png")
 POINTER_WATCHPOINT = load_pixmap("watchpoint.png")
+POINTER_SYMBOL     = load_pixmap("symbol.png")

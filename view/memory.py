@@ -19,7 +19,7 @@ from background import RunInBackground
 from placeholder import Placeholder
 
 from _memory_table import MemoryWordTable, DisassemblyTable, SourceTable
-from _annotation   import RegisterAnnotation
+from _annotation   import RegisterAnnotation, SymbolAnnotation
 
 
 def xxx_allowed_element_sizes(word_bits):
@@ -479,6 +479,8 @@ class MemoryTableViewer(gtk.Table):
 	# The rate at which scrolling accelerates depending on scrollbar position
 	SCROLL_ACCELERATION_FACTOR = 0.8
 	
+	MAX_TOOLTIP_ENTRIES = 20
+	
 	
 	def __init__(self, system, memory):
 		"""
@@ -934,6 +936,14 @@ class MemoryTableViewer(gtk.Table):
 			annotation = RegisterAnnotation(self.system, self.memory,
 			                                value, register_bank, register)
 			self.annotations.setdefault(value,[]).append(annotation)
+		
+		# For each symbol
+		symbol_pointers = self.system.get_symbol_pointers(self.memory)
+		for symbol_name, symbol_value in symbol_pointers:
+			# Place an annotation at the value it points to
+			annotation = SymbolAnnotation(self.system, self.memory,
+			                              symbol_value, symbol_name)
+			self.annotations.setdefault(symbol_value,[]).append(annotation)
 	
 	
 	def addr_in_range(self, addr, addr_start, length):
@@ -974,9 +984,19 @@ class MemoryTableViewer(gtk.Table):
 			icon   = max_annotation.get_pointer_pixbuf()
 			colour = max_annotation.get_colour()
 			
-			# Add all annotations' tooltips (in order of address)
-			tooltip = "\n".join(a.get_tooltip() for a in sorted(all_annotations,
-			                                                    key=(lambda a: a.addr)))
+			# Add up to the maximum number of  annotations' tooltips (in order of
+			# address then priority)
+			tooltip = "\n".join(a.get_tooltip()
+				for a in sorted(all_annotations,
+			                  key=(lambda a: (a.addr<<8) |
+			                                  (0xFF-a.get_priority()))
+			                 )[:MemoryTableViewer.MAX_TOOLTIP_ENTRIES])
+			
+			# Note if any were truncated
+			hidden_entries = len(all_annotations) - MemoryTableViewer.MAX_TOOLTIP_ENTRIES
+			if hidden_entries > 0:
+				tooltip += "\n<i>+ %d other%s not shown</i>"%(hidden_entries,
+				                                    "" if hidden_entries == 1 else "s")
 			
 			return (icon, colour, tooltip)
 		else:
