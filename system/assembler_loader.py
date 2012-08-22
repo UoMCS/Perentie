@@ -70,6 +70,32 @@ class AssemblerLoaderMixin(object):
 			self.log(e, flag = True)
 	
 	
+	def _load_bin(self, memory, data):
+		"""
+		Load a raw binary data file into the given memory. Returns a generator that
+		yields tuples (amount_read, total) indicating progress.
+		"""
+		try:
+			to_write = []
+			while data:
+				word = data[:memory.word_width_bits / 8]
+				data = data[memory.word_width_bits / 8:]
+				num = 0
+				for byte in word[::-1]:
+					num <<= 8
+					num  |= ord(byte)
+				to_write.append(num)
+			
+			# Write the data to the memory
+			length = len(to_write)
+			for addr, word in enumerate(to_write):
+				self.write_memory(memory, 1, addr, [word])
+				yield (addr, length)
+			
+		except Exception, e:
+			self.log(e, flag = True)
+	
+	
 	def _load_lst(self, memory, data):
 		"""
 		Load .lst format data into the given memory. Returns a generator that yields
@@ -230,6 +256,7 @@ class AssemblerLoaderMixin(object):
 			".lst": self._load_lst,
 			".kmd": self._load_kmd,
 			".elf": self._load_elf,
+			".bin": self._load_bin,
 		}
 	
 	
@@ -249,11 +276,8 @@ class AssemblerLoaderMixin(object):
 			_, ext = os.path.splitext(self.image_filename)
 			ext = ext.lower()
 			
-			# Select a loader to use
-			loaders = self.get_loaders()
-			if ext not in loaders:
-				raise Exception("Images in %s format not supported."%ext)
-			loader = loaders[ext]
+			# Select a loader to use (default to a raw binary)
+			loader = self.get_loaders().get(ext, self._load_bin)
 			
 			# Load the image
 			return loader(memory, open(self.image_filename, "r").read())
