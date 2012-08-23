@@ -7,7 +7,7 @@ A GTK+ widget for viewing a system's registers.
 
 from threading import Lock
 
-import gtk, gobject
+import gtk, gobject, pango
 
 from background  import RunInBackground
 from placeholder import Placeholder
@@ -196,6 +196,9 @@ class RegisterBankViewer(gtk.VBox):
 			cell_renderer.set_property("editable", editable)
 			if column_num > 0:
 				cell_renderer.set_property("font", "monospace")
+			if column_num == 1:
+				cell_renderer.set_property("alignment", pango.ALIGN_RIGHT)
+				cell_renderer.set_property("xalign", 1.0)
 			
 			# Set up renderer's editing events
 			cell_renderer.connect("editing-started",  self._on_int_register_editing_started)

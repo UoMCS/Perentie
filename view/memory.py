@@ -9,7 +9,7 @@ A GTK+ widget for viewing a system's memory.
 from math      import ceil
 from threading import Lock
 
-import gtk, gobject, glib
+import gtk, gobject, glib, pango
 
 from pixmaps import *
 from format  import *
@@ -788,6 +788,9 @@ class MemoryTableViewer(gtk.Table):
 		text_renderer = gtk.CellRendererText()
 		text_renderer.set_property("editable", False)
 		text_renderer.set_property("font", "monospace")
+		text_renderer.set_property("xpad", 5)
+		text_renderer.set_property("alignment", pango.ALIGN_RIGHT)
+		text_renderer.set_property("xalign", 1.0)
 		col.pack_start(text_renderer, expand = True)
 		
 		# Assign the column's renderers to the TreeModel's columns containing their
@@ -849,7 +852,7 @@ class MemoryTableViewer(gtk.Table):
 		self._add_empty_row()
 		
 		# Create columns for each data table entry
-		for num, (column_name, editable) in enumerate(columns):
+		for num, (column_name, editable, align_right) in enumerate(columns):
 			# Create a column with the given name
 			col = gtk.TreeViewColumn(column_name)
 			
@@ -857,6 +860,10 @@ class MemoryTableViewer(gtk.Table):
 			renderer = gtk.CellRendererText()
 			renderer.set_property("editable", editable)
 			renderer.set_property("font", "monospace")
+			renderer.set_property("xpad", 5)
+			if align_right:
+				renderer.set_property("alignment", pango.ALIGN_RIGHT)
+				renderer.set_property("xalign", 1.0)
 			col.pack_start(renderer, expand = True)
 			
 			# Set up callbacks for the editing events

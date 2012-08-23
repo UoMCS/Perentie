@@ -40,7 +40,8 @@ class MemoryTable(object):
 	
 	def get_columns(self):
 		"""
-		Return a list of extra columns this table has as (title, editable)
+		Return a list of extra columns this table has as (title, editable,
+		align_right)
 		"""
 		raise NotImplementedError()
 	
@@ -98,10 +99,10 @@ class MemoryWordTable(MemoryTable):
 	def get_columns(self):
 		# If just one column, just call it 'Data' to reduce confusion.
 		if self.num_elems == 1:
-			data_columns = [("Data", True)]
+			data_columns = [("Data", True, True)]
 		else:
-			data_columns = [("+%d"%(self.num_words*elem), True) for elem in range(self.num_elems)]
-		return data_columns + [("ASCII", False)]
+			data_columns = [("+%d"%(self.num_words*elem), True, True) for elem in range(self.num_elems)]
+		return data_columns + [("ASCII", False, False)]
 	
 	
 	def set_cell(self, addr, row, column, new_data):
@@ -172,7 +173,7 @@ class DisassemblyTable(MemoryTable):
 	
 	
 	def get_columns(self):
-		return [("Instruction", True), ("Disassembly (%s)"%self.disassembler.name, True)]
+		return [("Instruction", True, True), ("Disassembly (%s)"%self.disassembler.name, True, False)]
 	
 	
 	def set_cell(self, addr, row, column, new_data):
@@ -248,7 +249,7 @@ class SourceTable(DisassemblyTable):
 	
 	
 	def get_columns(self):
-		return [("Instruction", True), ("Source", False)]
+		return [("Instruction", True, True), ("Source", False, False)]
 	
 	
 	def set_cell(self, addr, row, column, new_data):
