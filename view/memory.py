@@ -229,14 +229,14 @@ class SingleMemoryViewer(gtk.VBox):
 				self.table_disassembly = len(self.memory_tables)
 			
 			# Source Listing
-			self.memory_tables.append(("Source (%s)"%disassembler.name,
+			self.memory_tables.append(("Source (With %s Disassembly)"%disassembler.name,
 			                          SourceTable(self.system,
 			                                      self.memory,
 			                                      disassembler,
 			                                      full_source = False)))
 			
 			# Full (all-lines) Source Listing
-			self.memory_tables.append(("Full Source (%s)"%disassembler.name,
+			self.memory_tables.append(("Full Source (With %s Disassembly)"%disassembler.name,
 			                          SourceTable(self.system,
 			                                      self.memory,
 			                                      disassembler,
