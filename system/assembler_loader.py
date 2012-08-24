@@ -110,12 +110,15 @@ class AssemblerLoaderMixin(object):
 				
 				val,has_source,src = map(str.strip, val.partition(";"))
 				
+				# Remove spaces between words
+				val = val.replace(" ","")
+				
 				addr = int(addr.split()[-1], 16)
 				
 				# XXX: Assumes that each entry has exactly one word
 				if has_source:
 					if addr not in image_source:
-						image_source[addr] = (1,
+						image_source[addr] = (1, # XXX: Wrong width if a multi-word entry
 						                      int(val,16) if val else 0,
 						                      [src])
 					else:
@@ -123,8 +126,10 @@ class AssemblerLoaderMixin(object):
 						                      image_source[addr][1] if not val else int(val, 16),
 						                      image_source[addr][2] + [src])
 				
-				if val != "":
-					to_write[addr] = [int(val, 16)]
+				while val != "":
+					to_write[addr] = [int(val[:memory.word_width_bits/4], 16)]
+					addr += 1
+					val = val[memory.word_width_bits/4:]
 			
 			# Set the source listing
 			self.image_source[memory] = image_source
