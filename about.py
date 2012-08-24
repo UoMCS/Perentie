@@ -13,8 +13,7 @@ NAME      = "Perentie"
 VERSION   = "0.1"
 COPYRIGHT = "Copyright 2012, The University of Manchester"
 COMMENTS  = """
-A low-level debugging tool for monitoring and controlling processors and
-microcontrollers.
+A simple debug monitor for processors and microcontrollers.
 
 This tool is designed to be a teaching and learning aid rather than a fully
 fledged debugging platform. This tool has been written based on the ideas of the
