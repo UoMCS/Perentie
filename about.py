@@ -9,7 +9,7 @@ should be defined!
 import gtk
 
 
-NAME      = "Debugger"
+NAME      = "Perentie"
 VERSION   = "0.1"
 COPYRIGHT = "Copyright 2012, The University of Manchester"
 COMMENTS  = """

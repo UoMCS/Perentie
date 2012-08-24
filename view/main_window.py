@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 """
 The initial program window used to select a target and then launch the
@@ -492,12 +493,13 @@ class MainWindow(gtk.Window):
 		architecture-specific changes which need to be made to the GUI.
 		"""
 		# Set the window title
-		self.set_title("%s%s (%s)"%(
-			("%s "%self.system.architecture.name
+		self.set_title("%s (%s) — %s v%s"%(
+			(self.system.architecture.name
 			 if self.system.architecture is not None
-			 else ""),
-			 about.NAME,
-			self.system.back_end.name
+			 else "Unknown Architecture"),
+			self.system.back_end.name,
+			about.NAME,
+			about.VERSION,
 		))
 		
 		# Update the peripherals available
