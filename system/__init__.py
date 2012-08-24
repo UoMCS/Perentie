@@ -72,6 +72,9 @@ class System(LoggerMixin,
 			
 			# Update the evaluator's view of the system
 			self.init_evaluator()
+			
+			# Clear the assembly/source file
+			self.set_source_filename(None)
 		else:
 			raise Exception("System did not respond.")
 
