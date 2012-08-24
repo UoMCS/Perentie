@@ -106,7 +106,7 @@ class AssemblerLoaderMixin(object):
 			to_write = {}
 			image_source = {}
 			for line in data.strip().split("\n"):
-				addr, val = map(str.strip, line.split(":"))
+				addr,_, val = map(str.strip, line.partition(":"))
 				
 				val,has_source,src = map(str.strip, val.partition(";"))
 				
