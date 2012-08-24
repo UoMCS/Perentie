@@ -4,7 +4,7 @@
 STUMP specific definition of a system.
 """
 
-from arm_hostable import ARMHostable
+from ackie_hostable import AckieHostable
 
 from register import RegisterBank, Register, Pointer, BitField
 from memory   import Memory
@@ -13,7 +13,7 @@ from disassembler.stump import STUMPDisassembler
 from assembler.stump    import STUMPAssembler
 
 
-class STUMP(ARMHostable):
+class STUMP(AckieHostable):
 	
 	# CPU Sub-type bottom-bytes which enable/disable register support
 	SUBTYPE_REG_AND_MEM = 0x00
@@ -23,7 +23,7 @@ class STUMP(ARMHostable):
 		"""
 		Define the STUMP system's memory, registers etc.
 		"""
-		ARMHostable.__init__(self, cpu_type, cpu_subtype)
+		AckieHostable.__init__(self, cpu_type, cpu_subtype)
 		
 		self.name = "STUMP"
 		

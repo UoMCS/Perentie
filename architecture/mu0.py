@@ -4,7 +4,7 @@
 MU0 specific definition of a system.
 """
 
-from arm_hostable import ARMHostable
+from ackie_hostable import AckieHostable
 
 from register import RegisterBank, Register, Pointer, BitField
 from memory   import Memory
@@ -13,13 +13,13 @@ from disassembler.mu0 import MU0Disassembler
 from assembler.mu0    import MU0Assembler
 
 
-class MU0(ARMHostable):
+class MU0(AckieHostable):
 	
 	def __init__(self, *args, **kwargs):
 		"""
 		Define the MU0 system's memory, registers etc.
 		"""
-		ARMHostable.__init__(self, *args, **kwargs)
+		AckieHostable.__init__(self, *args, **kwargs)
 		
 		self.name = "MU0"
 		

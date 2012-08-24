@@ -23,10 +23,10 @@ Errors will be reported in the error log in the Main Window.
 Debug Controller
 ----------------
 
-This peripheral is used by the 'ARM Host Program' which is a program which runs
-on the Manchester Lab Board and allows the development of simple 16-bit CPUs on
-the FPGA. This peripheral is provided to allow fine-grained controllability and
-observability for the attached device.
+This peripheral is used by the 'Ackie' ARM Host Program which is a program which
+runs on the Manchester Lab Board and allows the development of simple 16-bit
+CPUs on the FPGA. This peripheral is provided to allow fine-grained
+controllability and observability for the attached device.
 
 The number of clock-cycles executed before the device's fetch signal is asserted
 is displayed (i.e. how long the current instruction has taken to execute). You

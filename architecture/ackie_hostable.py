@@ -2,7 +2,7 @@
 
 """
 A base class which defines an architecture which supports being hosted by the
-'ARM host' program on the board.
+'Ackie' ARM host program on the board.
 
 Detauls of the architecture is gleaned from the CPU sub-type constant.  The
 subtype's bottom byte indicates whether memory and registers are available for
@@ -14,7 +14,7 @@ from base import Architecture
 from register import RegisterBank, Register, Pointer, BitField
 
 
-class ARMHostable(Architecture):
+class AckieHostable(Architecture):
 	
 	# CPU Sub-type bottom-bytes which enable/disable register support
 	SUBTYPE_REG_AND_MEM = 0x00
@@ -46,7 +46,7 @@ class ARMHostable(Architecture):
 		"""
 		Are registers enabled or is this a memory-only device?
 		"""
-		return (self.cpu_subtype & 0xFF) == ARMHostable.SUBTYPE_REG_AND_MEM
+		return (self.cpu_subtype & 0xFF) == AckieHostable.SUBTYPE_REG_AND_MEM
 	
 	
 	@property
