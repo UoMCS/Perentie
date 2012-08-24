@@ -307,7 +307,7 @@ class TargetSelection(gtk.Window):
 			self.system = System(self.back_end)
 		except Exception, e:
 			# Something failed!
-			print traceback.format_exc()
+			sys.stderr.write(traceback.format_exc())
 			self.shut_down()
 			self.error_message.set_markup("<b>Error while connecting:</b>\n%s"%str(e))
 			self.error_message.show()
@@ -367,8 +367,7 @@ class TargetSelection(gtk.Window):
 			try:
 				self.back_end.close()
 			except Exception, e:
-				print "Couldn't close back_end:"
-				print traceback.format_exc()
+				sys.stderr.write("Couldn't close back_end:\n%s"%traceback.format_exc())
 				pass
 			self.back_end = None
 	
