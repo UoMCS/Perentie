@@ -170,7 +170,9 @@ found in the 'Device Info' window available in the 'Device' menu. For example::
 
 The result of an expression will be masked off to fit the register or memory it
 assigned to. If a signed value is produced, it will be sign-extended to the
-correct width.
+correct width. If the result of an expression is a string of bytes/chars, it
+will be converted into an integer using the b2i function (see below) before
+being masked off to fit the memory.
 
 Various utility functions are also provided. Most functions from the python 'math'
 library are available, for example sin, cos, tan, ceil and floor. In addition
@@ -186,6 +188,8 @@ the following functions are also available:
 * chr -- Convert an ASCII code to a char.
 * sum -- Sum up all arguments, e.g. sum(r1, r2, r3)
 * map, reduce -- Google these for usage.
+* i2b(value, width_bits) -- Return a string of bytes/chars from the given value
+* b2i(value) -- Convert a string of bytes into an integer.
 
 Misc Features
 -------------

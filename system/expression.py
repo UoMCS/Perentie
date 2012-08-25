@@ -41,6 +41,8 @@ BASE_CHARS = {
 from math import *
 from functools import reduce
 
+from back_end.util import i2b, b2i
+
 def log2(num):
 	return log(num,2)
 
@@ -84,7 +86,7 @@ class EvaluatorMixin(object):
 		# The following functions are safe and allowed
 		safe_funcs = [
 			# Utility functions
-			"sign_extend",
+			"sign_extend", "b2i", "i2b",
 			
 			# Math functions
 			"acos", "asin", "atan", "atan2", "ceil", "cos", "cosh", "degrees", "e",
@@ -310,4 +312,11 @@ class EvaluatorMixin(object):
 		local_vars = self.evaluator_local_vars.copy()
 		local_vars.update(self.evaluator_symbol_vars)
 		
-		return int(eval(expr, self.evaluator_global_vars, local_vars))
+		value = eval(expr, self.evaluator_global_vars, local_vars)
+		
+		if type(value) is str:
+			# Convert strings (of bytes/chars) into an int
+			return b2i(value)
+		else:
+			# Cast everything else to an int
+			return int(value)
