@@ -12,6 +12,7 @@ from optparse import OptionParser, OptionGroup
 
 import gtk, gobject
 
+import about
 from back_end import EmulatorBackEnd, SerialPortBackEnd
 from system   import System
 
@@ -208,6 +209,7 @@ class TargetSelection(gtk.Window):
 		Set up the window
 		"""
 		self.set_title("Select Debugger Target")
+		self.set_icon_list(*about.get_icon_list())
 		self.set_default_size(400,250)
 		self.set_border_width(5)
 		self.connect("destroy", self._on_quit_clicked)

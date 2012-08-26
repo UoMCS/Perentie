@@ -58,6 +58,10 @@ class MainWindow(gtk.Window):
 		# A flag which can be set to kill the refresh loop
 		self.killed = False
 		
+		
+		# Set the window icon
+		self.set_icon_list(*about.get_icon_list())
+		
 		# General components
 		self.control_bar = ControlBar(self.system)
 		self.register_viewer = RegisterViewer(self.system)
