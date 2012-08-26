@@ -11,8 +11,12 @@ import gtk
 
 
 NAME      = "Perentie"
-VERSION   = "0.1"
+
+# Defined in version file
+VERSION   = open("VERSION","r").read().strip().split("\n")[-1].strip()
+
 COPYRIGHT = "Copyright 2012, The University of Manchester"
+
 COMMENTS  = """
 A simple debug monitor for processors and microcontrollers.
 
@@ -20,10 +24,13 @@ This tool is designed to be a teaching and learning aid rather than a fully
 fledged debugging platform. This tool has been written based on the ideas of the
 Komodo Manchester Debugger (KMD) and aims to be backwards-compatible.
 """.strip().replace("\n\n", "<br>").replace("\n", " ").replace("<br>","\n\n")
-LICENSE = "GNU General Public License (GPL) Version 3"
+
+# Include from file.
+LICENSE = open("LICENSE","r").read()
+
 WEBSITE = "http://cs.man.ac.uk/"
 AUTHORS = [
-	"Jonathan Heathcote (jdh@cs.man.ac.uk)"
+	"Jonathan Heathcote <mail@jhnet.co.uk>"
 ]
 ICON = gtk.gdk.pixbuf_new_from_file(os.path.join(os.path.dirname(__file__), "logo", "icon_64.png"))
 
