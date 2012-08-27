@@ -1,3 +1,7 @@
+.. Website meta-data:
+.. TITLE:Peripheral Guide
+.. MENU_ITEM:Documentation
+
 Peripheral Guide
 ================
 

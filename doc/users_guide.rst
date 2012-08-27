@@ -1,3 +1,7 @@
+.. Website meta-data:
+.. TITLE:User's Guide
+.. MENU_ITEM:Documentation
+
 User's Guide
 ============
 
@@ -178,18 +182,29 @@ Various utility functions are also provided. Most functions from the python 'mat
 library are available, for example sin, cos, tan, ceil and floor. In addition
 the following functions are also available:
 
-* log2 -- Log base 2
-* sign_extend(value, bits) -- Sign extend the given value to 'bits' bits wide.
-* abs -- Absolute value (make positive)
-* int -- Truncate a floating-point value (e.g. from sin) to an integer.
-* float -- Convert an integer to a floating point value (e.g. to allow floating
-  point deivision)
-* ord -- Convert a char to its ASCII code.
-* chr -- Convert an ASCII code to a char.
-* sum -- Sum up all arguments, e.g. sum(r1, r2, r3)
-* map, reduce -- Google these for usage.
-* i2b(value, width_bits) -- Return a string of bytes/chars from the given value
-* b2i(value) -- Convert a string of bytes into an integer.
+log2
+	Log base 2
+sign_extend(value, bits)
+	Sign extend the given value to 'bits' bits wide.
+abs
+	Absolute value (make positive)
+int
+	Truncate a floating-point value (e.g. from sin) to an integer.
+float
+	Convert an integer to a floating point value (e.g. to allow floating point
+	deivision)
+ord
+	Convert a char to its ASCII code.
+chr
+	Convert an ASCII code to a char.
+sum
+	Sum up all arguments, e.g. sum(r1, r2, r3)
+map, reduce
+	Google these for usage.
+i2b(value, width_bits)
+	Return a string of bytes/chars from the given value
+b2i(value)
+	Convert a string of bytes into an integer.
 
 Misc Features
 -------------

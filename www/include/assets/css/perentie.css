@@ -1,0 +1,13 @@
+.navbar .brand {
+	background-image : url("../img/logo.png");
+	background-repeat : no-repeat;
+	background-position : left center;
+	
+	width : 140px;
+	text-indent: -30000px;
+}
+
+.copyright {
+	text-align : center;
+	color : #AAAAAA;
+}

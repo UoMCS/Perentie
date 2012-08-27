@@ -1,3 +1,7 @@
+.. Website meta-data:
+.. TITLE:Developer Guide
+.. MENU_ITEM:Documentation
+
 Developer Guide
 ===============
 
