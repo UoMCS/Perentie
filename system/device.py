@@ -174,7 +174,7 @@ class DeviceMixin(object):
 				cpu_type, _, _ = self._get_board_definition()
 				return cpu_type
 			except BackEndError, e:
-				self.log(e)
+				self.log(e, source = "Device Communication")
 				return (-1, -1)
 	
 	
@@ -190,7 +190,7 @@ class DeviceMixin(object):
 				_, peripheral_ids, _ = self._get_board_definition()
 				return peripheral_ids
 			except BackEndError, e:
-				self.log(e)
+				self.log(e, source = "Device Communication")
 				return []
 	
 	
@@ -221,7 +221,7 @@ class DeviceMixin(object):
 					return value
 			
 			except BackEndError, e:
-				self.log(e)
+				self.log(e, source = "Device Communication")
 				return -1
 	
 	
@@ -249,7 +249,7 @@ class DeviceMixin(object):
 				self.back_end.register_write(width_bytes, addr, data)
 			
 			except BackEndError, e:
-				self.log(e)
+				self.log(e, source = "Device Communication")
 
 	
 	def read_memory(self, memory, elem_size_words, addr, length):
@@ -284,7 +284,7 @@ class DeviceMixin(object):
 				return out
 			
 			except BackEndError, e:
-				self.log(e)
+				self.log(e, source = "Device Communication")
 				return [-1] * length
 	
 	
@@ -316,7 +316,7 @@ class DeviceMixin(object):
 				data = self.back_end.memory_write(memory.index, width_bytes, addr, out)
 			
 			except BackEndError, e:
-				self.log(e)
+				self.log(e, source = "Device Communication")
 	
 	
 	def reset(self):
@@ -327,7 +327,7 @@ class DeviceMixin(object):
 				self.resync()
 				self.back_end.reset()
 			except BackEndError, e:
-				self.log(e)
+				self.log(e, source = "Device Communication")
 	
 	
 	def run(self, max_steps = 0,
@@ -344,7 +344,7 @@ class DeviceMixin(object):
 				                  step_over_swi, step_over_bl,
 				                  break_on_first_instruction)
 			except BackEndError, e:
-				self.log(e)
+				self.log(e, source = "Device Communication")
 	
 	
 	def stop(self):
@@ -355,7 +355,7 @@ class DeviceMixin(object):
 				self.resync()
 				self.back_end.stop_execution()
 			except BackEndError, e:
-				self.log(e)
+				self.log(e, source = "Device Communication")
 	
 	
 	def pause_execution(self):
@@ -366,7 +366,7 @@ class DeviceMixin(object):
 				self.resync()
 				self.back_end.pause_execution()
 			except BackEndError, e:
-				self.log(e)
+				self.log(e, source = "Device Communication")
 	
 	
 	def continue_execution(self):
@@ -377,7 +377,7 @@ class DeviceMixin(object):
 				self.resync()
 				self.back_end.continue_execution()
 			except BackEndError, e:
-				self.log(e)
+				self.log(e, source = "Device Communication")
 	
 	
 	def get_status(self):
@@ -392,7 +392,7 @@ class DeviceMixin(object):
 				self.resync()
 				return self.back_end.get_status()
 			except BackEndError, e:
-				self.log(e)
+				self.log(e, source = "Device Communication")
 				return (DeviceMixin.STATUS_ERROR, -1, -1)
 	
 	
@@ -407,7 +407,7 @@ class DeviceMixin(object):
 				self.resync()
 				return self.back_end.periph_get_status(periph_num)
 			except BackEndError, e:
-				self.log(e)
+				self.log(e, source = "Device Communication")
 				return -1
 	
 	
@@ -422,7 +422,7 @@ class DeviceMixin(object):
 				self.resync()
 				self.back_end.periph_set_status(periph_num, new_status)
 			except BackEndError, e:
-				self.log(e)
+				self.log(e, source = "Device Communication")
 	
 	
 	def periph_send_message(self, periph_num, message):
@@ -436,7 +436,7 @@ class DeviceMixin(object):
 				self.resync()
 				return self.back_end.periph_send_message(periph_num, message)
 			except BackEndError, e:
-				self.log(e)
+				self.log(e, source = "Device Communication")
 				return 0
 	
 	
@@ -452,7 +452,7 @@ class DeviceMixin(object):
 				self.resync()
 				return self.back_end.periph_get_message(periph_num, max_length)
 			except BackEndError, e:
-				self.log(e)
+				self.log(e, source = "Device Communication")
 				return ""
 	
 	
@@ -483,4 +483,4 @@ class DeviceMixin(object):
 			try:
 				self.back_end.periph_download(num, data)
 			except BackEndError, e:
-				self.log(e)
+				self.log(e, source = "Device Communication")

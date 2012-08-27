@@ -344,7 +344,7 @@ class Spartan3(gtk.VBox, PeripheralWidget):
 				f = open(filename, "rb")
 			except Exception, e:
 				# Log the error
-				self.system.log(e, True)
+				self.system.log(e, True, "Read Bitfile")
 		
 		# Try and load the file
 		with self.data_lock:
@@ -365,7 +365,7 @@ class Spartan3(gtk.VBox, PeripheralWidget):
 					) = read_bitfile(f)
 					self.filename = filename
 				except Exception, e:
-					self.system.log(e, True)
+					self.system.log(e, True, "Extract Bitfile")
 	
 	
 	def display_meta_data(self):
@@ -440,7 +440,7 @@ class Spartan3(gtk.VBox, PeripheralWidget):
 					yield (progress, data_length)
 			except Exception, e:
 				# Something bad happened and the download failed.
-				self.system.log(e, True)
+				self.system.log(e, True, "Download Bitfile")
 		
 		# Return to the GTK thread to re-enable the download button
 		yield
@@ -474,7 +474,7 @@ class Spartan3(gtk.VBox, PeripheralWidget):
 					pass
 			except Exception, e:
 				# Something bad happened and the download failed.
-				self.system.log(e, True)
+				self.system.log(e, True, "Erase FPGA")
 		
 		# Return to the GTK thread to re-enable the download button
 		yield

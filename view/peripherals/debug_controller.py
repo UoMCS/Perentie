@@ -238,7 +238,7 @@ class DebugController(gtk.Notebook, PeripheralWidget):
 			
 			self.send_scan_path(description)
 		except Exception, e:
-			self.system.log(e, True)
+			self.system.log(e, True, "Load Scan Path")
 			return
 		
 		# Trigger a refresh since we may have just changed the architecture of the

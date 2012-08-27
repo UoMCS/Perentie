@@ -54,14 +54,15 @@ class LogViewer(gtk.ScrolledWindow):
 		self.tree_view.show()
 	
 	
-	def _on_log(self, exception, traceback, flag, in_gtk_thread):
+	def _on_log(self, exception, traceback, flag, source, in_gtk_thread):
 		if not in_gtk_thread:
-			glib.idle_add(self._on_log, exception, traceback, flag, True)
+			glib.idle_add(self._on_log, exception, traceback, flag, source, True)
 		else:
 			colour = "#FF0000" if flag else "#000000"
-			it = self.list_store.append((str(exception),   # Simple description
-			                             800,              # Initially bold
-			                             colour,           # Colour
+			it = self.list_store.append(("%s%s"%("%s: "%(source) if source else "",
+			                                     str(exception)),
+			                             800,    # Initially bold
+			                             colour, # Colourise the row
 			                             glib.markup_escape_text(traceback))) # Full description
 			
 			# Scroll into view

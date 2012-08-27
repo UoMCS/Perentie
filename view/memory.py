@@ -439,7 +439,7 @@ class SingleMemoryViewer(gtk.VBox):
 			except Exception, e:
 				# Disable follow mode if it has been enabled
 				self.follow_check.set_active(False)
-				self.system.log(e, True)
+				self.system.log(e, True, "Address Expression Evaluation")
 		
 		# Return to the GTK thread to update the view
 		yield

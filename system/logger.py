@@ -28,16 +28,17 @@ class LoggerMixin(object):
 	def on_log(self, callback, *args, **kwargs):
 		"""
 		Add a callback whenever a logging event occurs.
-		  callback(exception, flag, *args, **kwargs)
+		  callback(exception, flag, source, *args, **kwargs)
 		"""
 		with self.log_lock:
 			self._on_log.append((callback, args, kwargs))
 	
 	
-	def log(self, exception, flag = False):
+	def log(self, exception, flag = False, source = None):
 		"""
 		Add a exception to the log. If flag is true then the user will be shown the
-		log automatically.
+		log automatically. The source argument can be a string describing where the
+		error occurred.
 		"""
 		
 		with self.log_lock:
@@ -45,9 +46,9 @@ class LoggerMixin(object):
 			
 			sys.stderr.write(trace)
 			
-			self.event_log.append((exception, trace, flag))
+			self.event_log.append((exception, trace, flag, source))
 			
 			callbacks = self._on_log[:]
 		
 		for callback, args, kwargs in callbacks:
-			callback(exception, trace, flag, *args, **kwargs)
+			callback(exception, trace, flag, source, *args, **kwargs)

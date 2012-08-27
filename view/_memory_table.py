@@ -116,11 +116,11 @@ class MemoryWordTable(MemoryTable):
 				self.system.write_memory(self.memory, self.num_words, addr, [value])
 			except Exception, e:
 				# The user entered something invalid, ignore the edit
-				self.system.log(e, True)
+				self.system.log(e, True, "Set Memory Value")
 		
 		else:
 			# Do nothing if editing the ASCII
-			self.system.log(Exception("Cannot Edit ASCII Values"))
+			self.system.log(Exception("Cannot Edit ASCII Values"), True, "Set Memory Value")
 	
 	
 	def get_data(self, addr, num_rows):
@@ -188,7 +188,7 @@ class DisassemblyTable(MemoryTable):
 				self.system.write_memory(self.memory, length, addr, [value])
 			except Exception, e:
 				# The user entered something invalid, ignore the edit
-				self.system.log(e, True)
+				self.system.log(e, True, "Set Memory Value")
 		
 		else:
 			try:
@@ -198,7 +198,7 @@ class DisassemblyTable(MemoryTable):
 				self.system.write_memory(self.memory, length, addr, [value])
 			except Exception, e:
 				# Some assembler error
-				self.system.log(e, True)
+				self.system.log(e, True, "Set Memory Assembly")
 	
 	
 	def get_data(self, addr, num_rows):

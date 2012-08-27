@@ -67,7 +67,7 @@ class AssemblerLoaderMixin(object):
 		try:
 			self.image_filename = assember.assemble(self.source_filename)
 		except Exception, e:
-			self.log(e, flag = True)
+			self.log(e, True, "Assemble File")
 	
 	
 	def _load_bin(self, memory, data):
@@ -93,7 +93,7 @@ class AssemblerLoaderMixin(object):
 				yield (addr, length)
 			
 		except Exception, e:
-			self.log(e, flag = True)
+			self.log(e, True, "Load Binary File")
 	
 	
 	def _load_lst(self, memory, data):
@@ -141,7 +141,7 @@ class AssemblerLoaderMixin(object):
 				yield (num, length)
 			
 		except Exception, e:
-			self.log(e, flag = True)
+			self.log(e, True, "Load LST File")
 	
 	
 	def _load_kmd(self, memory, data):
@@ -217,7 +217,7 @@ class AssemblerLoaderMixin(object):
 				yield (num, length)
 			
 		except Exception, e:
-			self.log(e, flag = True)
+			self.log(e, True, "Load KMD File")
 	
 	
 	def _load_elf(self, memory, data):
@@ -245,7 +245,7 @@ class AssemblerLoaderMixin(object):
 					yield (num, length)
 			
 		except Exception, e:
-			self.log(e, flag = True)
+			self.log(e, True, "Load ELF File")
 	
 	
 	def load_image(self):
@@ -296,4 +296,4 @@ class AssemblerLoaderMixin(object):
 			self.evaluator_update_symbols()
 			
 		except Exception, e:
-			self.log(e, flag = True)
+			self.log(e, True, "Load Memory Image")
