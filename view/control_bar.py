@@ -80,33 +80,35 @@ class ControlBar(gtk.VBox):
 		"""
 		Add the menu buttons to the bar
 		"""
-		self.auto_refresh_button = self._make_menu_item("Auto Refresh", check = True)
+		self.auto_refresh_button = self._make_menu_item("_Auto Refresh",
+		                                                check = True,
+		                                                accelerator = "<Shift>F1")
 		self.auto_refresh_button.connect("toggled", self._on_auto_refresh_toggled)
 		device_submenu = self._make_menu((
-			("Select New Target", gtk.STOCK_DISCONNECT, self._on_select_target_clicked, "<Control>n"),
+			("Select _New Target", gtk.STOCK_DISCONNECT, self._on_select_target_clicked, "<Control>n"),
 			None,
-			("Device Info", gtk.STOCK_INFO, self._on_info_clicked, "<Control>i"),
+			("Device _Info", gtk.STOCK_INFO, self._on_info_clicked, "<Control>i"),
 			None,
-			("Refresh Now", gtk.STOCK_REFRESH, self._on_refresh_clicked, "F1"),
+			("_Refresh Now", gtk.STOCK_REFRESH, self._on_refresh_clicked, "F1"),
 			self.auto_refresh_button,
 			None,
-			("Quit", gtk.STOCK_QUIT, self._on_quit_clicked, "<Control>w"),
+			("_Quit", gtk.STOCK_QUIT, self._on_quit_clicked, "<Control>w"),
 		))
 		
-		device_menu = self._make_menu_item("Device")
+		device_menu = self._make_menu_item("_Device")
 		device_menu.set_submenu(device_submenu)
 		self.menubar.append(device_menu)
 		
 		self.assemble_menu_btn   = self._make_menu_item("Assemble",  gtk.STOCK_CONVERT)
-		self.reassemble_menu_btn = self._make_menu_item("Ressemble", gtk.STOCK_REFRESH, accelerator = "F3")
+		self.reassemble_menu_btn = self._make_menu_item("Re_assemble", gtk.STOCK_REFRESH, accelerator = "F3")
 		self.load_menu_btn   = self._make_menu_item("Load Image",    gtk.STOCK_GO_DOWN)
-		self.reload_menu_btn = self._make_menu_item("Reload Image", gtk.STOCK_REFRESH, accelerator = "F4")
+		self.reload_menu_btn = self._make_menu_item("Re_load Image", gtk.STOCK_REFRESH, accelerator = "F4")
 		self.assemble_menu_btn.connect("activate",   self._on_select_source_file_clicked)
 		self.reassemble_menu_btn.connect("activate", self._on_assemble_clicked)
 		self.load_menu_btn.connect("activate",       self._on_select_image_file_clicked)
 		self.reload_menu_btn.connect("activate",     self._on_load_clicked)
 		
-		self.symbol_viewer_btn = self._make_menu_item("Symbol Viewer", gtk.STOCK_GO_DOWN, accelerator = "<Control>s")
+		self.symbol_viewer_btn = self._make_menu_item("_Symbol Viewer", gtk.STOCK_GO_DOWN, accelerator = "<Control>s")
 		self.symbol_viewer_btn.connect("activate", self._on_symbol_viewer_clicked)
 		program_submenu = self._make_menu((
 			self.assemble_menu_btn,
@@ -117,7 +119,7 @@ class ControlBar(gtk.VBox):
 			None,
 			self.symbol_viewer_btn
 		))
-		program_menu = self._make_menu_item("Program")
+		program_menu = self._make_menu_item("P_rogram")
 		program_menu.set_submenu(program_submenu)
 		self.menubar.append(program_menu)
 		
@@ -127,17 +129,17 @@ class ControlBar(gtk.VBox):
 		self.disabled_on_no_loader.append(self.load_menu_btn)
 		self.disabled_on_no_loader.append(self.reload_menu_btn)
 		
-		self.reset_menu_btn = self._make_menu_item("Reset",
+		self.reset_menu_btn = self._make_menu_item("R_eset",
 			gtk.STOCK_REFRESH, accelerator = "F2")
-		self.run_menu_btn = self._make_menu_item("Run",
+		self.run_menu_btn = self._make_menu_item("_Run",
 			gtk.STOCK_MEDIA_PLAY, accelerator = "F5")
-		self.stop_menu_btn = self._make_menu_item("Stop",
+		self.stop_menu_btn = self._make_menu_item("_Stop",
 			gtk.STOCK_MEDIA_STOP, accelerator =  "F6")
-		self.step_menu_btn = self._make_menu_item("Step",
+		self.step_menu_btn = self._make_menu_item("S_tep",
 			gtk.STOCK_MEDIA_NEXT, accelerator =  "F7")
-		self.multi_step_menu_btn = self._make_menu_item("Multi-Step",
+		self.multi_step_menu_btn = self._make_menu_item("_Multi-Step",
 			gtk.STOCK_MEDIA_FORWARD, accelerator =  "F8")
-		self.pause_menu_btn = self._make_menu_item("Pause",
+		self.pause_menu_btn = self._make_menu_item("_Pause",
 			check = True, accelerator="F9")
 		
 		self.reset_menu_btn.connect("activate", self._on_reset_clicked)
@@ -164,17 +166,21 @@ class ControlBar(gtk.VBox):
 			self.multi_step_menu_btn,
 			self.pause_menu_btn,
 		))
-		control_menu = self._make_menu_item("Control")
+		control_menu = self._make_menu_item("_Control")
 		control_menu.set_submenu(control_submenu)
 		self.menubar.append(control_menu)
 		
-		self.base_bin_btn = self._make_menu_item("Binary", radio = True)
-		self.base_oct_btn = self._make_menu_item("Octal", radio = True,
-		                                         group = self.base_bin_btn)
-		self.base_dec_btn = self._make_menu_item("Decimal", radio = True,
-		                                         group = self.base_bin_btn)
-		self.base_hex_btn = self._make_menu_item("Hexadecimal", radio = True,
-		                                         group = self.base_bin_btn)
+		self.base_bin_btn = self._make_menu_item("_Binary", radio = True,
+		                                         accelerator = "<Control>b")
+		self.base_oct_btn = self._make_menu_item("_Octal", radio = True,
+		                                         group = self.base_bin_btn,
+		                                         accelerator = "<Control>o")
+		self.base_dec_btn = self._make_menu_item("_Decimal", radio = True,
+		                                         group = self.base_bin_btn,
+		                                         accelerator = "<Control>d")
+		self.base_hex_btn = self._make_menu_item("_Hexadecimal", radio = True,
+		                                         group = self.base_bin_btn,
+		                                         accelerator = "<Control>h")
 		
 		self.base_bin_btn.connect("toggled", self._on_base_changed, 2)
 		self.base_oct_btn.connect("toggled", self._on_base_changed, 8)
@@ -187,12 +193,14 @@ class ControlBar(gtk.VBox):
 		elif format.format_base == 16: self.base_hex_btn.set_active(True)
 		
 		
-		self.base_prefix_btn = self._make_menu_item("Show Base Prefix", check = True)
+		self.base_prefix_btn = self._make_menu_item("Show Base _Prefix",
+		                                            check = True,
+		                                            accelerator = "<Control>p")
 		self.base_prefix_btn.connect("toggled", self._on_base_prefix_btn_toggled)
 		self.base_prefix_btn.set_active(format.format_show_prefix)
 		window_submenu = self._make_menu((
-			("New Memory Viewer",   gtk.STOCK_NEW, self._on_new_memory_viewer_clicked, "<Control>m"),
-			("New Register Viewer", gtk.STOCK_NEW, self._on_new_register_viewer_clicked, "<Control>r"),
+			("New _Memory Viewer",   gtk.STOCK_NEW, self._on_new_memory_viewer_clicked, "<Control>m"),
+			("New _Register Viewer", gtk.STOCK_NEW, self._on_new_register_viewer_clicked, "<Control>r"),
 			None,
 			self.base_bin_btn,
 			self.base_oct_btn,
@@ -201,12 +209,12 @@ class ControlBar(gtk.VBox):
 			None,
 			self.base_prefix_btn,
 		))
-		window_menu = self._make_menu_item("Window")
+		window_menu = self._make_menu_item("_Window")
 		window_menu.set_submenu(window_submenu)
 		self.menubar.append(window_menu)
 		
 		self.periph_submenu = gtk.Menu()
-		self.periph_menu = self._make_menu_item("Peripherals")
+		self.periph_menu = self._make_menu_item("_Peripherals")
 		self.periph_menu.set_submenu(self.periph_submenu)
 		self.periph_menu.set_no_show_all(True)
 		self.periph_menu.hide()
@@ -215,7 +223,7 @@ class ControlBar(gtk.VBox):
 		help_submenu = self._make_menu((
 			("About", gtk.STOCK_ABOUT, self._on_about_clicked),
 		))
-		help_menu = self._make_menu_item("Help")
+		help_menu = self._make_menu_item("_Help")
 		help_menu.set_submenu(help_submenu)
 		self.menubar.append(help_menu)
 	
@@ -343,6 +351,7 @@ class ControlBar(gtk.VBox):
 		if accelerator is not None:
 			menu_item.add_accelerator("activate", self.accelerators, key,mod, gtk.ACCEL_VISIBLE)
 		
+		menu_item.set_use_underline(True)
 		menu_item.set_label(item)
 		
 		if icon_stock_id is not None and not check:
