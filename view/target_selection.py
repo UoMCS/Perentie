@@ -71,18 +71,28 @@ class EmulatorTarget(gtk.Table, Target):
 		            xoptions = gtk.FILL|gtk.EXPAND, yoptions = gtk.FILL)
 	
 	
+	def get_emulator_command(self, option, opt_string, value, parser):
+		"""
+		Get all remaining arguments and treat these as the emulator string.
+		"""
+		parser.values.emulator = []
+		while parser.rargs:
+			parser.values.emulator.append(parser.rargs.pop(0))
+	
+	
 	def add_option_group(self, parser):
 		emu = OptionGroup(parser, "Emulator Options",
 		                  "Options relating to the use of an emulator back-end.")
 		emu.add_option("-e", "--emulator",
-		               dest = "emulator", action="store_true", default = False,
-		               help = "Use an emulator back-end")
+		               dest = "emulator", action="callback",
+		               callback = self.get_emulator_command,
+		               help = "Use emulator back-end specified by remaining arguments.")
 		parser.add_option_group(emu)
 	
 	
 	def handle_options(self, options, args):
 		if options.emulator:
-			self.emulator_entry.set_text(list2cmdline(args[1:]))
+			self.emulator_entry.set_text(list2cmdline(options.emulator))
 			return True
 		else:
 			return False
