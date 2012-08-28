@@ -49,6 +49,10 @@ function change_ext {
 mkdir -p "$OUTPUT"
 mkdir -p "$WORKING"
 
+# Generate the download file & put it in the output
+./generate_download.sh
+DOWNLOAD_SIZE="$(ls -lh download.zip | cut -f5 -d " ")"
+mv download.zip "$OUTPUT/"
 
 # Copy the HTML files
 cp "$INPUT/"*.htm "$DOC/"*.htm "$WORKING/"
@@ -77,6 +81,7 @@ for file in $WORKING/*.htm; do
 		| find_replace "VERSION" "$(tail -1 $ROOT/VERSION)" \
 		| find_replace "TITLE" "$TITLE" \
 		| find_replace "TITLE_" "$TITLE_" \
+		| find_replace "DOWNLOAD_SIZE" "$DOWNLOAD_SIZE" \
 		> "$OUTPUT/`basename "$file"`"
 
 done

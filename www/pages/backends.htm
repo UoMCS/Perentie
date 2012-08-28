@@ -1,0 +1,163 @@
+<!-- MENU_ITEM:Back-Ends -->
+<!-- TITLE:Back-Ends -->
+
+<h1>Back-Ends</h1>
+	
+	<p>Perentie supports monitoring various devices. The following architectures
+	are supported to some extent.</p>
+	
+	<table class="table table-striped">
+		<thead>
+		<tr><th>Architecture</th><th>ID</th><th>Notes</th></tr>
+		</thead>
+		
+		<tbody>
+		<tr>
+			<td>ARM</td>
+			<td>00</td>
+			<td>Highly experimental. Currently missing a disassembler and register
+			write access.</td>
+		</tr>
+		
+		<tr>
+			<td>STUMP</td>
+			<td>03</td>
+			<td>Fully supported.</td>
+		</tr>
+		
+		<tr>
+			<td>MU0</td>
+			<td>04</td>
+			<td>Fully supported.</td>
+		</tr>
+		</tbody>
+	</table>
+	
+	<h2>Manchester Lab Board</h2>
+	
+	The <a
+	href="http://www.cs.manchester.ac.uk/resources/software/komodo/ARM_board_2/">
+	Manchester Lab Board</a> is the primary target for much of the Perentie
+	platform as it is used in the labs.
+	
+	<h3>'Ackie' Back-end</h3>
+	<div class="row">
+		<div class="span8">
+			<p>This back-end runs on the Manchester Lab Board and provides a platform
+			for monitoring simple 16-bit CPUs on the onboard Xilinx FPGA. It was built
+			to support students developing MU0 and STUMP CPUs.</p>
+			
+			<p>This back-end emulates a 16-bit memory space with a number of
+			memory-mapped peripherals, clock and reset generation as well as a
+			scan-path control for reading internal processor registers.</p>
+		</div>
+		
+		<div class="span4">
+			<table class="table table-condensed">
+				<tr>
+					<th>Type</th>
+					<td>Development Board</td>
+				</tr>
+				<tr>
+					<th rowspan=2>Architecture</th>
+					<td>STUMP (03)</td>
+				</tr>
+				<tr>
+					<td>MU0 (04)</td>
+				</tr>
+				<tr>
+					<th>Website</th>
+					<!-- XXX TODO: Ackie website -->
+					<td><a href="#">Ackie Website</a></td>
+				</tr>
+			</table>
+		</div>
+	</div>
+
+	<h3>ARM Back-end</h3>
+	<div class="row">
+		<div class="span8">
+			<p>A back-end running on the Manchester Lab Board which emulates an ARM
+			processor with various memory mapped peripherals and an FPGA. This is the
+			back-end which Komodo was originally built for.</p>
+		</div>
+		
+		<div class="span4">
+			<table class="table table-condensed">
+				<tr>
+					<th>Type</th>
+					<td>Development Board</td>
+				</tr>
+				<tr>
+					<th>Architecture</th>
+					<td>ARM (00)</td>
+				</tr>
+				<tr>
+					<th>Website</th>
+					<td><a href="http://www.cs.manchester.ac.uk/resources/software/komodo/ARM_board_2/">Manchester Lab Board</a></td>
+				</tr>
+			</table>
+		</div>
+	</div>
+	
+	<h2>Emulators</h2>
+	
+	<p>A number of software based emulators are available which allows Perentie to
+	be used without any special hardware.</p>
+
+	<h3>Dragon</h3>
+	<div class="row">
+		<div class="span8">
+			<p>The ARM emulator back-end originally built for Komodo. The emulator is
+			extensible, stable and reasonably efficient.</p>
+		</div>
+		
+		<div class="span4">
+			<table class="table table-condensed">
+				<tr>
+					<th>Type</th>
+					<td>Emulator</td>
+				</tr>
+				<tr>
+					<th>Architecture</th>
+					<td>STUMP (03)</td>
+				</tr>
+				<tr>
+					<th>Website</th>
+					<!-- XXX TODO: Stumpulator website -->
+					<td><a href="#">Stumpulator Project</a></td>
+				</tr>
+			</table>
+		</div>
+	</div>
+
+	<h3>Jimulator</h3>
+	<div class="row">
+		<div class="span8">
+			<p>The ARM emulator back-end originally built for Komodo. The emulator is
+			extensible, stable and reasonably efficient.</p>
+		</div>
+		
+		<div class="span4">
+			<table class="table table-condensed">
+				<tr>
+					<th>Type</th>
+					<td>Emulator</td>
+				</tr>
+				<tr>
+					<th>Architecture</th>
+					<td>ARM (00)</td>
+				</tr>
+				<tr>
+					<th>Website</th>
+					<td><a
+					href="http://www.cs.manchester.ac.uk/resources/software/komodo/">Komodo
+					Project</a></td>
+				</tr>
+			</table>
+		</div>
+	</div>
+
+
+
+
