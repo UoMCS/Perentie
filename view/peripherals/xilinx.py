@@ -386,7 +386,7 @@ class Spartan3(gtk.VBox, PeripheralWidget):
 			else:
 				device_name_text = "(None)"
 			
-			fpga_device_name_text = self.fpga_design_name or "(Unknown)"
+			fpga_device_name_text = self.fpga_device_name or "(Unknown)"
 			
 			if self.datestamp is not None and self.timestamp is not None:
 				timestamp_text = "%s %s"%(self.datestamp, self.timestamp)
