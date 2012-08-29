@@ -5,7 +5,7 @@ A GTK+ widget which displays information about the connected device.
 """
 
 
-import gtk, gobject
+import gtk, gobject, pango
 
 from background  import RunInBackground
 from placeholder import Placeholder
@@ -36,10 +36,18 @@ class SymbolViewer(gtk.VBox):
 	
 	def refresh(self):
 		"""
-		Refreshes information in the widget.
+		Refresh information in the widget, particularly, refresh all values incase
+		the base being displayed was changed.
 		"""
-		# Nothing to update
-		pass
+		if self.system.architecture is None:
+			return
+		
+		for memory, treeview in self.treeviews.iteritems():
+			liststore = treeview.get_model()
+			for row in range(len(liststore)):
+				liststore[row][1] = format_number(liststore[row][3],
+				                                  self.system.architecture.word_width_bits)
+			treeview.columns_autosize()
 	
 	
 	def refresh_symbols(self):
@@ -55,9 +63,11 @@ class SymbolViewer(gtk.VBox):
 			symbols = self.system.image_symbols.get(memory,{})
 			for symbol, (value, symbol_type) in symbols.iteritems():
 				liststore.append((symbol,
-				                  format_number(value, self.system.architecture.word_width_bits),
-				                  symbol_type))
-			treeview.columns_autosize()
+				                  "",
+				                  symbol_type,
+				                  value))
+		
+		self.refresh()
 	
 	
 	def architecture_changed(self):
@@ -89,25 +99,35 @@ class SymbolViewer(gtk.VBox):
 			for memory in self.system.architecture.memories:
 				# Add a page with a symbol listing for each memory
 				label = gtk.Label(memory.name)
-				liststore = gtk.ListStore(str, str, str)
+				# One hidden column stores the integer version of the value so that when
+				# refresh is called we just convert this rather than re-requesting the
+				# symbols.
+				liststore = gtk.ListStore(str, str, str, object)
 				self.treeviews[memory]  = gtk.TreeView(liststore)
 				scroller = gtk.ScrolledWindow()
 				scroller.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
 				scroller.add(self.treeviews[memory])
 				self.widget.append_page(scroller, label)
 				
-				cell_renderer = gtk.CellRendererText()
 				
+				cell_renderer = gtk.CellRendererText()
+				cell_renderer.set_property("font", "monospace")
 				column = gtk.TreeViewColumn("Symbol")
 				column.pack_start(cell_renderer)
 				column.add_attribute(cell_renderer, "text", 0)
 				self.treeviews[memory].append_column(column)
 				
+				cell_renderer = gtk.CellRendererText()
+				cell_renderer.set_property("font", "monospace")
+				cell_renderer.set_property("alignment", pango.ALIGN_RIGHT)
+				cell_renderer.set_property("xalign", 1.0)
 				column = gtk.TreeViewColumn("Value")
 				column.pack_start(cell_renderer)
 				column.add_attribute(cell_renderer, "text", 1)
 				self.treeviews[memory].append_column(column)
 				
+				cell_renderer = gtk.CellRendererText()
+				cell_renderer.set_property("font", "monospace")
 				column = gtk.TreeViewColumn("Type")
 				column.pack_start(cell_renderer)
 				column.add_attribute(cell_renderer, "text", 2)

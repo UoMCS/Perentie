@@ -728,10 +728,9 @@ class ControlBar(gtk.VBox):
 			window.set_title("Symbols")
 			window.set_default_size(450, 550)
 			
-			def on_dismiss(widget):
+			def on_dismiss(widget, self, window):
 				self.symbol_viewer = None
-				window.destroy()
-			window.connect("destroy", on_dismiss)
+			window.connect("destroy", on_dismiss, self, window)
 			
 			window.show_all()
 			window.present()
@@ -866,6 +865,9 @@ class ControlBar(gtk.VBox):
 		
 		if self.device_info_viewer is not None:
 			self.device_info_viewer.refresh()
+		
+		if self.symbol_viewer is not None:
+			self.symbol_viewer.refresh()
 	
 	
 	def architecture_changed(self):
