@@ -182,6 +182,8 @@ Various utility functions are also provided. Most functions from the python 'mat
 library are available, for example sin, cos, tan, ceil and floor. In addition
 the following functions are also available:
 
+min, max
+	Return the minimum or maximum argument.
 log2
 	Log base 2
 sign_extend(value, bits)

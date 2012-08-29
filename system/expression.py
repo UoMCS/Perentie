@@ -105,6 +105,8 @@ class EvaluatorMixin(object):
 				assert(False)
 		
 		# Add various useful builtins
+		self.evaluator_local_vars["min"]   = min
+		self.evaluator_local_vars["max"]   = max
 		self.evaluator_local_vars["abs"]   = abs
 		self.evaluator_local_vars["int"]   = int
 		self.evaluator_local_vars["float"] = float
