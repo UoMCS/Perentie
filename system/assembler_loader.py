@@ -108,7 +108,8 @@ class AssemblerLoaderMixin(object):
 			for line in data.strip().split("\n"):
 				addr,_, val = map(str.strip, line.partition(":"))
 				
-				val,has_source,src = map(str.strip, val.partition(";"))
+				val,has_source,src = val.partition(";")
+				val = val.strip()
 				
 				# Remove spaces between words
 				val = val.replace(" ","")
@@ -166,7 +167,8 @@ class AssemblerLoaderMixin(object):
 			image_source = {}
 			image_symbols = {}
 			for line in data.strip().split("\n"):
-				addr_str,_, val_src = map(str.strip, line.partition(":"))
+				addr_str,_, val_src = line.partition(":")
+				addr_str = addr_str.strip()
 				
 				try:
 					addr = int(addr_str, 16)
@@ -175,7 +177,8 @@ class AssemblerLoaderMixin(object):
 					# address
 					val_src = addr_str
 				
-				vals,_, src      = map(str.strip, val_src.partition(";"))
+				vals,_, src      = val_src.partition(";")
+				vals = vals.strip()
 				
 				# Remove spaces between units
 				vals = vals.split(" ")
