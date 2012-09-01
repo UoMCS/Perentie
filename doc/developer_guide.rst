@@ -218,15 +218,16 @@ Conventions
 
 The UI should *never* block.
 
-Numbers should be described in the same format that would be accepted by the
-expression evaluator. An unfortunate side-effect of this is that hex and binary
-numbers are presently shown with the 0x and 0b prefixes.
+Numbers and register names etc. should be displayed in the same format that
+would be accepted by the expression evaluator. Conversely, the expression
+evaluator should accept values in the same format as the UI is currently
+displaying.
 
-Numbers should generally be specified in hex and padded to the correct width
-with zeros. In this case, the function format_number in the format module
-(view/format.py) should be used to generate appropriate strings.
+To make this easier, format_number is provided which will zero-pad and display
+numbers in the current base, with/without a prefix as needed. File sizes in
+bytes can be displayed with format_storage_size.
 
-Unprintable ASCII values are shown as a dot.
+Unprintable ASCII values are shown as a dot. See format_ascii.
 
 Error dialogues are annoying. Instead, errors should be reported to the system
 log which should be displayed to the user in a non-disruptive way and only
