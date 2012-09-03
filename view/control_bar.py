@@ -518,6 +518,8 @@ class ControlBar(gtk.VBox):
 		else:
 			self._on_reassemble_clicked(btn)
 	
+	assembler_background_decorator = RunInBackground()
+	@assembler_background_decorator
 	def _on_reassemble_clicked(self, btn):
 		"""
 		Reassemble the current source file
@@ -525,7 +527,13 @@ class ControlBar(gtk.VBox):
 		if self.system.get_source_filename() is None:
 			return
 		
+		# Set the progress to 0% and then assemble in the background
+		yield (0,100)
 		self.system.assemble()
+		
+		# Return to the GTK thread to emit the event.
+		yield
+		
 		self.emit("device-state-changed")
 	
 	

@@ -244,6 +244,12 @@ class MainWindow(gtk.Window):
 			ControlBar.loader_background_decorator.get_adjustment(self.control_bar),
 			"Loading Memory Image"
 		)
+		
+		# Assembler
+		self.status_bar.add_adjustment(
+			ControlBar.assembler_background_decorator.get_adjustment(self.control_bar),
+			"Assembling File"
+		)
 	
 	
 	def _make_container_window(self, title, widget, icon = None, size = None):
@@ -268,7 +274,7 @@ class MainWindow(gtk.Window):
 	def _init_periph(self, periph_num, periph_id, periph_sub_id,
 	                 name, PeripheralWidget):
 		"""
-		Instanciate and create a window for this peripheral viewer and hook up all
+		Instantiate and create a window for this peripheral viewer and hook up all
 		events.
 		"""
 		periph_widget = PeripheralWidget(self.system, periph_num,
