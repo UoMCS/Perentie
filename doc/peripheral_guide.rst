@@ -35,7 +35,7 @@ controllability and observability for the attached device.
 The number of clock-cycles executed before the device's fetch signal is asserted
 is displayed (i.e. how long the current instruction has taken to execute). You
 can also manually send a clock-pulse (High followed by Low) to the device using
-the 'Clock' button.  Manually clocking the device will automatically pause
+the 'Pulse Clock' button.  Manually clocking the device will automatically pause
 execution.
 
 The state of the memory interface is displayed underneath. Note that when the

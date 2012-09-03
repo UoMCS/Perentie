@@ -5,17 +5,9 @@ A GTK about dialog for the program. This file is where all the project meta-data
 should be defined!
 """
 
-import os, glob
-
-import gtk
-
-
 NAME      = "Perentie"
 
-# Defined in version file
-VERSION   = open("VERSION","r").read().strip().split("\n")[-1].strip()
-
-COPYRIGHT = "Copyright 2012, The University of Manchester"
+# VERSION is defined by the VERSION file.
 
 COMMENTS  = """
 A simple debug monitor for processors and microcontrollers.
@@ -23,16 +15,59 @@ A simple debug monitor for processors and microcontrollers.
 This tool is designed to be a teaching and learning aid rather than a fully
 fledged debugging platform. This tool has been written based on the ideas of the
 Komodo Manchester Debugger (KMD) and aims to be backwards-compatible.
-""".strip().replace("\n\n", "<br>").replace("\n", " ").replace("<br>","\n\n")
-
-# Include from file.
-LICENSE = open("LICENSE","r").read()
+"""
 
 WEBSITE = "http://cs.man.ac.uk/"
+
 AUTHORS = [
 	"Jonathan Heathcote <mail@jhnet.co.uk>"
 ]
-ICON = gtk.gdk.pixbuf_new_from_file(os.path.join(os.path.dirname(__file__), "logo", "icon_64.png"))
+
+COPYRIGHT = "Copyright 2012, The University of Manchester"
+
+# LICENSE is defined by the LICENSE file.
+
+################################################################################
+
+import os, glob
+
+import gtk
+
+def _path(*path_parts):
+	"""
+	Get the path of the given file in the root of the program.
+	"""
+	
+	return os.path.join(os.path.dirname(__file__), *path_parts)
+
+
+def _last_line(s):
+	"""
+	Get the last line of a string.
+	"""
+	return s.split("\n")[-1].strip()
+
+
+def _reflow(s):
+	"""
+	Reflow a string so that all text in a paragraph (denoted by text on
+	consecutive lines) is merged onto one line.
+	"""
+	return s.strip().replace("\n\n", "<br>").replace("\n", " ").replace("<br>","\n\n")
+
+
+################################################################################
+
+# Defined in version file
+VERSION   = _last_line(open(_path("VERSION"),"r").read().strip())
+
+# Include from file.
+LICENSE = open(_path("LICENSE"),"r").read()
+
+# Load from icon file
+ICON = gtk.gdk.pixbuf_new_from_file(_path("logo", "icon_64.png"))
+
+################################################################################
 
 class AboutDialog(gtk.AboutDialog):
 	
@@ -43,7 +78,7 @@ class AboutDialog(gtk.AboutDialog):
 		self.set_name(NAME)
 		self.set_version(VERSION)
 		self.set_copyright(COPYRIGHT)
-		self.set_comments(COMMENTS)
+		self.set_comments(_reflow(COMMENTS))
 		self.set_license(LICENSE)
 		self.set_website(WEBSITE)
 		self.set_authors(AUTHORS)
