@@ -21,14 +21,14 @@ The following software/libraries are needed.
 Getting Started
 ---------------
 
-You can start the debugger with an emulator using::
+You can start Perentie with an emulator using::
 
-	python main.py -e emulator_path [emulator args]
+	python /path/to/perentie/dir -e emulator_path [emulator args]
 
-You can also start the debugger connected to a serial device (such as the
-Manchester lab boards set in a Komodo-compatible mode) using::
+You can also start it connected to a serial device (such as the Manchester lab
+boards set in a Komodo-compatible mode) using::
 
-	python main.py -s /serial/port/path [-b baudrate]
+	python /path/to/perentie/dir -s /serial/port/path [-b baudrate]
 
 If a serial port name of "0" is supplied, the system's default serial port is
 used. The baudrate defaults to 115200.
