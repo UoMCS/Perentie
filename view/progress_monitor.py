@@ -34,7 +34,7 @@ class ProgressMonitor(gtk.HBox):
 	def __init__(self, system,
 	             auto_hide = True,
 	             orientation = gtk.ORIENTATION_VERTICAL,
-	             runtime_threshold = 0.2,
+	             loiter = 0.5,
 	             spacing = 0):
 		"""
 		A progress-monitoring widget for long-running background processes which
@@ -48,18 +48,17 @@ class ProgressMonitor(gtk.HBox):
 		orientation is either gtk.ORIENTATION_VERTICAL or gtk.ORIENTATION_HORIZONTAL and indicates how the
 		progress bars should be stacked.
 		
-		Do not show/raise the started event unless runtime_threshold seconds have
-		elapsed. This prevents progress bars flashing up momentarily for quick
-		processes. Set to 0 to always show.
+		Show the progress bar (at 100%) for loiter seconds after the process has
+		completed.
 		
 		spacing is the gap between each progress bar.
 		"""
 		gtk.HBox.__init__(self, homogeneous = True, spacing = spacing)
 		
-		self.system            = system
-		self.auto_hide         = auto_hide
-		self.orientation       = orientation
-		self.runtime_threshold = runtime_threshold
+		self.system      = system
+		self.auto_hide   = auto_hide
+		self.orientation = orientation
+		self.loiter      = loiter
 		
 		# A mapping from adjustments to (progress_bar, chg_handler_id,
 		# val_handler_id)
@@ -78,20 +77,27 @@ class ProgressMonitor(gtk.HBox):
 			self.pack_start(self.box, fill = True, expand = True)
 	
 	
-	def _delayed_show(self, adjustment, progress_bar):
+	def _delayed_remove(self, adjustment, progress_bar):
 		"""
-		Callback after a period to show a progress bar which was previously hidden
-		if it is still showing progress.
+		Remove the given adjustment and hide the progress_bar for a finished
+		adjustment. To be called after the loiter period has elapsed.
 		"""
 		upper = adjustment.get_upper()
 		lower = adjustment.get_lower()
-		value = adjustment.get_value()
 		
-		# The progress bar is still active, display it
-		if upper - lower != 0:
-			progress_bar.show()
-			self.active_bars.add(progress_bar)
-			self.emit("started", progress_bar.get_text())
+		# Remove it if it has finished
+		if upper - lower == 0:
+			# This adjustment has finished, hide/alert if it was previously active
+			if progress_bar in self.active_bars:
+				self.active_bars.remove(progress_bar)
+				
+				if self.auto_hide:
+					progress_bar.hide()
+				
+				if len(self.active_bars) == 0:
+					self.emit("finished_all")
+				
+				self.emit("finished", progress_bar.get_text())
 	
 	
 	def _on_adjustment_changed(self, adjustment, progress_bar):
@@ -110,26 +116,23 @@ class ProgressMonitor(gtk.HBox):
 			# Alert/show if just started
 			if progress_bar not in self.active_bars:
 				if self.auto_hide:
-					if self.runtime_threshold == 0.0:
-						self._delayed_show(adjustment, progress_bar)
-					else:
-						glib.timeout_add(int(self.runtime_threshold*1000),
-						                 self._delayed_show, adjustment, progress_bar)
-				else:
-					self.emit("started", progress_bar.get_text())
-					self.active_bars.add(progress_bar)
+					progress_bar.show()
+				self.emit("started", progress_bar.get_text())
+				self.active_bars.add(progress_bar)
 		else:
-			# This adjustment has finished, hide/alert if it was previously active
-			if progress_bar in self.active_bars:
-				self.active_bars.remove(progress_bar)
-				
-				if self.auto_hide:
-					progress_bar.hide()
-				
-				if len(self.active_bars) == 0:
-					self.emit("finished_all")
-				
-				self.emit("finished", progress_bar.get_text())
+			# The progress bar has finished, show it as 100% then hide it.
+			
+			# Set it to 100% if auto-hiding, otherwise just set it to 0 now as
+			# otherwise it looks as if the process is still finishing off.
+			if self.auto_hide:
+				progress_bar.set_fraction(1)
+			else:
+				progress_bar.set_fraction(0)
+			
+			# Hide it later
+			glib.timeout_add(int(self.loiter*1000),
+			                 self._delayed_remove, adjustment, progress_bar)
+	
 	
 	
 	def add_adjustment(self, adjustment, name = None):
