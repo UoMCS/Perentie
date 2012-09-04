@@ -51,8 +51,8 @@ mkdir -p "$WORKING"
 
 # Generate the download file & put it in the output
 ./generate_download.sh
-DOWNLOAD_SIZE="$(ls -lh download.zip | cut -f5 -d " ")"
-mv download.zip "$OUTPUT/"
+DOWNLOAD_SIZE="$(ls -lh perentie.zip | cut -f5 -d " ")"
+mv perentie.zip "$OUTPUT/"
 
 # Copy the HTML files
 cp "$INPUT/"*.htm "$DOC/"*.htm "$WORKING/"

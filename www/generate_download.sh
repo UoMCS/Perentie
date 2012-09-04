@@ -2,6 +2,6 @@
 
 # Generates a download.zip which doesn't include this www directory.
 
-# XXX Fix directory in ZIP
-[ -f "download.zip" ] && rm "download.zip"
-git ls-files ../ | grep -xRE "^[.][.]/.*" | zip download -@
+cd ..
+git ls-files . | grep -vxRE "www/.*" | zip perentie -@
+mv perentie.zip www/
