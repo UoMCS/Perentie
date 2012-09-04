@@ -9,7 +9,7 @@ Quick Start
 
 Run::
 
-	$ python main.py
+	$ python /path/to/perentie/dir
 
 Requirements:
 
