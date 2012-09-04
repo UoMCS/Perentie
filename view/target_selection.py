@@ -221,6 +221,7 @@ class TargetSelection(gtk.Window):
 		self.set_title("Select Debugger Target")
 		self.set_icon_list(*about.get_icon_list())
 		self.set_default_size(400,250)
+		self.set_position(gtk.WIN_POS_CENTER)
 		self.set_border_width(5)
 		self.connect("destroy", self._on_quit_clicked)
 		
