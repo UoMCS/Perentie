@@ -6,9 +6,8 @@ An implementation of a KMD Comms Protocol master.
 Spec: http://www.cs.manchester.ac.uk/resources/software/komodo/comms.html
 """
 
-
-from exceptions import *
-from util       import *
+from exceptions     import *
+from util.num_utils import *
 
 
 class BackEnd(object):

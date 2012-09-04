@@ -41,7 +41,7 @@ BASE_CHARS = {
 from math import *
 from functools import reduce
 
-from back_end.util import i2b, b2i
+from util.num_utils import i2b, b2i
 
 def log2(num):
 	return log(num,2)

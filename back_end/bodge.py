@@ -7,7 +7,7 @@ The back-end only supports sending elements of size 1, 2, 4 or 8 bytes. As a
 result, all values sent must be padded to this length.
 """
 
-from util import bits_to_bytes
+from util.num_utils import bits_to_bytes
 
 
 def xxx_pad_width(width_bits):

@@ -19,7 +19,7 @@ you need isn't available, please add it.
 from threading import Lock
 
 from back_end.exceptions import BackEndError
-from back_end.util       import i2b, b2i, bits_to_bytes
+from util.num_utils      import i2b, b2i, bits_to_bytes
 
 # XXX Bodges for the back-end's limitations
 from back_end.bodge import xxx_pad_width
