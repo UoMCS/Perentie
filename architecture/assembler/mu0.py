@@ -20,10 +20,10 @@ class MU0Assembler(Assembler):
 	def assemble(self, input_filename):
 		# Get the output filename
 		filename, ext = os.path.splitext(input_filename)
-		output_filename = "%s.lst"%filename
+		output_filename = "%s.kmd"%filename
 		
 		# Start the assembler as a child-process (Capture stderr for errors)
-		args = ["mu0asm", "-l", output_filename, input_filename]
+		args = ["mu0asm", "-lk", output_filename, input_filename]
 		assembler = Popen(args, stdout = PIPE)
 		
 		# Get the errors and wait for assembly to finish
