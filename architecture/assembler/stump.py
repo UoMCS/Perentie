@@ -9,6 +9,8 @@ from subprocess import Popen, PIPE
 
 from base import Assembler
 
+from StringIO import StringIO
+
 
 class STUMPAssembler(Assembler):
 	
@@ -18,33 +20,22 @@ class STUMPAssembler(Assembler):
 	
 	
 	def assemble(self, input_filename):
-		# Get the output filename
-		# Chop off the .s (as sasm does)
-		filename, ext = os.path.splitext(input_filename)
+		# Get the output filename, chop off the .s, replace with lst
+		output_filename, ext = os.path.splitext(input_filename)
 		if ext != ".s":
-			filename += ext
-		output_filename = "%s.lst"%filename
+			output_filename += ext
+		output_filename = "%s.kmd"%output_filename
 		
 		# Start the assembler as a child-process (Capture stderr for errors)
-		args = ["sasm", input_filename, "-l"]
-		assembler = Popen(args, stderr = PIPE)
+		args = ["jdg_sasm", "-lk", output_filename, input_filename]
+		output = StringIO()
+		assembler = Popen(args, stdout = PIPE)
 		
 		# Get the errors and wait for assembly to finish
-		errors = assembler.stderr.read()
+		errors = assembler.stdout.read()
 		return_code = assembler.wait()
 		
 		if return_code != 0:
 			raise Exception("Assembly Failed:\n%s"%errors)
-		
-		# Stick the source in the comment at the end of each listing line. SASM
-		# produces list files which correspond line-for-line with the source
-		src = open(input_filename,"r").read().split("\n")
-		lst = open(output_filename,"r").read().split("\n")
-		
-		lst_file = open(output_filename,"w")
-		for src_line, lst_line in zip(src,lst):
-			if lst_line.strip():
-				lst_file.write("%s;%s\n"%(lst_line, src_line))
-		lst_file.close()
 		
 		return output_filename

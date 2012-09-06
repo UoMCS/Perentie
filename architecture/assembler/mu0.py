@@ -24,10 +24,10 @@ class MU0Assembler(Assembler):
 		
 		# Start the assembler as a child-process (Capture stderr for errors)
 		args = ["mu0asm", "-l", output_filename, input_filename]
-		assembler = Popen(args, stderr = PIPE)
+		assembler = Popen(args, stdout = PIPE)
 		
 		# Get the errors and wait for assembly to finish
-		errors = assembler.stderr.read()
+		errors = assembler.stdout.read()
 		return_code = assembler.wait()
 		
 		if return_code != 0:
