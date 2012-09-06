@@ -212,6 +212,9 @@ class MainWindow(gtk.Window):
 		self.mem_panes.pack1(self.memory_viewer_top, resize = True, shrink = False)
 		self.mem_panes.pack2(self.memory_viewer_btm, resize = True, shrink = False)
 		
+		# Ensure the log viewer is a decent size
+		self.log_viewer.set_size_request(-1, 200)
+		
 		# Add an expander with a log viewer in
 		self.log_expander = gtk.Expander("Error Log")
 		self.log_expander.add(self.log_viewer)
