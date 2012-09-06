@@ -27,7 +27,7 @@ class STUMPAssembler(Assembler):
 		output_filename = "%s.kmd"%output_filename
 		
 		# Start the assembler as a child-process (Capture stderr for errors)
-		args = ["jdg_sasm", "-lk", output_filename, input_filename]
+		args = ["sasm", "-lk", output_filename, input_filename]
 		output = StringIO()
 		assembler = Popen(args, stdout = PIPE)
 		
