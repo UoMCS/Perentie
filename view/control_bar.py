@@ -256,7 +256,7 @@ class ControlBar(gtk.VBox):
 		self._add_separator()
 		
 		b = self._add_button("Run", gtk.STOCK_MEDIA_PLAY, self._on_run_clicked,
-		                     "Run indefinately (F5)")
+		                     "Run indefinitely (F5)")
 		self.disabled_on_busy.append(b)
 		b = self._add_button("Stop", gtk.STOCK_MEDIA_STOP, self._on_stop_clicked,
 		                     "Stop and ignore remaining steps (F6)")
@@ -631,7 +631,7 @@ class ControlBar(gtk.VBox):
 	@RunInBackground()
 	def _on_run_clicked(self, btn):
 		"""
-		Run button clicked: Start executing indefinately
+		Run button clicked: Start executing indefinitely
 		"""
 		self.system.run()
 		
