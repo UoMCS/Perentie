@@ -313,7 +313,7 @@ class DeviceMixin(object):
 					out += i2b(element, width_bytes)
 				
 				# Write the data from memory
-				data = self.back_end.memory_write(memory.index, width_bytes, addr, out)
+				self.back_end.memory_write(memory.index, width_bytes, addr, out)
 			
 			except BackEndError, e:
 				self.log(e, source = "Device Communication")
