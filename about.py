@@ -23,7 +23,7 @@ AUTHORS = [
 	"Jonathan Heathcote <mail@jhnet.co.uk>"
 ]
 
-COPYRIGHT = "Copyright 2012, The University of Manchester"
+COPYRIGHT = "Copyright 2013, The University of Manchester"
 
 # LICENSE is defined by the LICENSE file.
 
