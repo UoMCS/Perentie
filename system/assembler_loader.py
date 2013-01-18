@@ -154,10 +154,7 @@ class AssemblerLoaderMixin(object):
 					
 					# Make sure the address isn't being re-defined
 					if addr in to_write:
-						raise Exception("Address %s redefined on line %d: %s"%(
-							format_number(addr, memory.addr_width_bits),
-							line_num, line
-						))
+						raise Exception("Address 0x%08X redefined on line %d: %s"%(addr, line_num, line))
 					
 					# Set the data to write for this address
 					to_write[addr] = (words, int(block, 16))
@@ -171,7 +168,7 @@ class AssemblerLoaderMixin(object):
 					# All preceeding lines with the same address should have had no data
 					# in so we can happily overwrite the size and data here
 					image_source[addr-size][0] = size
-					image_source[addr-size][1] = 0 if not data else int("".join(data), 16)
+					image_source[addr-size][1] = 0 if not data else int("".join(data[::-1]), 16)
 					# Preceeding lines may have added source lines, we should add ours to
 					# the list.
 					image_source[addr-size][2].append(src)
