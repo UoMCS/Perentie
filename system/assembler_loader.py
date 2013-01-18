@@ -9,6 +9,11 @@ works.
 """
 
 import os
+import re
+
+from math import ceil
+
+from collections import defaultdict
 
 
 class AssemblerLoaderMixin(object):
@@ -101,44 +106,84 @@ class AssemblerLoaderMixin(object):
 		Load .lst format data into the given memory. Returns a generator that yields
 		tuples (amount_read, total) indicating progress.
 		"""
+		
+		# A regular expression matching a line of a list file
+		lst_line_re = re.compile(r"\s*("
+		                           +r"(?P<address>[0-9a-f]+)"              # Address
+		                           +r"\s*:\s*"                             # :
+		                           +r"(?P<data>[0-9a-f]+(\s+[0-9a-f]+)*)?" # Data
+		                         +r")?\s*("
+		                           +r"; "                                  # ;
+		                           +r"(?P<comment>.*)"                     # Comment
+		                         +r")?", re.I)
+		
 		try:
-			# Parse the input file
+			# Data to be written to memory as {addr:(size_words, value_int)}.
 			to_write = {}
-			image_source = {}
-			for line in data.strip().split("\n"):
-				addr,_, val = map(str.strip, line.partition(":"))
-				
-				val,has_source,src = val.partition(";")
-				val = val.strip()
-				
-				# Remove spaces between words
-				val = val.replace(" ","")
-				
-				addr = int(addr.split()[-1], 16)
-				
-				# XXX: Assumes that each entry has exactly one word
-				if has_source:
-					if addr not in image_source:
-						image_source[addr] = (1, # XXX: Wrong width if a multi-word entry
-						                      int(val,16) if val else 0,
-						                      [src])
-					else:
-						image_source[addr] = (image_source[addr][0],
-						                      image_source[addr][1] if not val else int(val, 16),
-						                      image_source[addr][2] + [src])
-				
-				while val != "":
-					to_write[addr] = [int(val[:memory.word_width_bits/4], 16)]
-					addr += 1
-					val = val[memory.word_width_bits/4:]
 			
-			# Set the source listing
-			self.image_source[memory] = image_source
+			# Source lines as a tuple as self.image_source would store
+			image_source = defaultdict((lambda: [0, 0, []]))
+			
+			# Address to which next read values should be stored
+			addr = 0
+			
+			# Parse the list file line-by-line
+			for line_num, line in enumerate(data.strip().split("\n")):
+				# Match the line against the regular expression to extract the relevent
+				# fields and check for bad data
+				match = lst_line_re.match(line)
+				if not match:
+					raise Exception("Invalid listing on line %d: %s"%(line_num, repr(line)))
+				
+				# Set the address if one was present (continue from last if not)
+				if match.group("address"):
+					addr = int(match.group("address"), 16)
+				
+				# The data contained in the line (keep as hex strings as these indicate
+				# the size of the words to write)
+				if match.group("data"):
+					data = filter(None, match.group("data").split())
+				else:
+					data = []
+				
+				size = 0
+				for block in data:
+					# 4 bits per hex-char
+					block_width_bits = len(block)*4
+					words = int(ceil(float(block_width_bits) / memory.word_width_bits))
+					
+					# Make sure the address isn't being re-defined
+					if addr in to_write:
+						raise Exception("Address %s redefined on line %d: %s"%(
+							format_number(addr, memory.addr_width_bits),
+							line_num, line
+						))
+					
+					# Set the data to write for this address
+					to_write[addr] = (words, int(block, 16))
+					
+					addr += words
+					size += words
+				
+				# A source listing may be present as a comment in the lst file
+				src = match.group("comment")
+				if src is not None:
+					# All preceeding lines with the same address should have had no data
+					# in so we can happily overwrite the size and data here
+					image_source[addr-size][0] = size
+					image_source[addr-size][1] = 0 if not data else int("".join(data), 16)
+					# Preceeding lines may have added source lines, we should add ours to
+					# the list.
+					image_source[addr-size][2].append(src)
+				
+			# Set the source listing and symbols
+			self.image_source[memory]  = image_source
+			self.image_symbols[memory] = {}
 			
 			# Write the data to the memory
 			length = len(to_write)
-			for num, (addr, values) in enumerate(to_write.iteritems()):
-				self.write_memory(memory, 1, addr, values)
+			for num, (addr, (words, data)) in enumerate(to_write.iteritems()):
+				self.write_memory(memory, words, addr, [data])
 				yield (num, length)
 			
 		except Exception, e:
@@ -150,8 +195,6 @@ class AssemblerLoaderMixin(object):
 		Load .kmd format data into the given memory. Returns a generator that yields
 		tuples (amount_read, total) indicating progress.
 		"""
-		# The number of nybles per memory word
-		word_nybles = memory.word_width_bits/4
 		
 		try:
 			# Check for the magic number
@@ -162,63 +205,22 @@ class AssemblerLoaderMixin(object):
 			# The symbol and data tables are seperated by an empty line
 			data,_, symbol_data = data.partition("\n\n")
 			
-			# Parse the input file
-			to_write = {}
-			image_source = {}
-			image_symbols = {}
-			for line in data.strip().split("\n"):
-				addr_str,_, val_src = line.partition(":")
-				addr_str = addr_str.strip()
-				
-				try:
-					addr = int(addr_str, 16)
-				except ValueError:
-					# We have a line where the source was wrapped and thus there is no
-					# address
-					val_src = addr_str
-				
-				vals,_, src      = val_src.partition(";")
-				vals = vals.strip()
-				
-				# Remove spaces between units
-				vals = vals.split(" ")
-				
-				# Add the source line to
-				if addr not in image_source:
-					image_source[addr] = (sum(map(len, vals))/word_nybles,
-					                      int("".join(vals) or "0", 16),
-					                      [src])
-				else:
-					image_source[addr] = (image_source[addr][0] + sum(map(len, vals))/word_nybles,
-					                      image_source[addr][1] if not vals else int("".join(vals) or "0", 16) ,
-					                      image_source[addr][2] + [src])
-				
-				# Warning: This will silently drop words which are smaller than a memory
-				# word
-				for val in vals:
-					width_words = len(val)/word_nybles
-					val         = int(val, 16) if width_words else 0
-					for word in range(width_words):
-						to_write[addr] = val>>(word*memory.word_width_bits) & ((1<<memory.word_width_bits)-1)
-						addr += 1
+			# Load the program part of the file as a normal lst file (loads the device
+			# and sets source)
+			for num,length in self._load_lst(memory, data):
+				yield (num,length)
 			
-			# Parse the symbol table
+			# Parse the symbol table (chopping off the heading row)
+			image_symbols = {}
 			for line in symbol_data.strip().split("\n")[1:]:
 				line_parts = line.split(" ")
 				symbol = line_parts[1]
 				value,_,symbol_type = (" ".join(line_parts[2:])).lstrip(" ").partition("  ")
 				image_symbols[symbol] = (int(value, 16), symbol_type)
 			
-			# Store the source & symbols
-			self.image_source[memory]  = image_source
+			# Store the symbols
 			self.image_symbols[memory] = image_symbols
-			
-			# Write the data to the memory
-			length = len(to_write)
-			for num, (addr, value) in enumerate(to_write.iteritems()):
-				self.write_memory(memory, 1, addr, [value])
-				yield (num, length)
-			
+		
 		except Exception, e:
 			self.log(e, True, "Load KMD File")
 	
