@@ -45,7 +45,7 @@ class ARM(Architecture):
 		self._define_register_bank(memory, ["Undefined", "undef",
 		                                    "undefined", "undef"], 128)
 		self._define_register_bank(memory, ["IRQ", "irq"], 160)
-		self._define_register_bank(memory, ["FIQ", "FIQ"], 192)
+		self._define_register_bank(memory, ["FIQ", "fiq"], 192)
 	
 	
 	def _define_register_bank(self, memory, names, offset, pointers = False):
