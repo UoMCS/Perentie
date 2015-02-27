@@ -70,8 +70,8 @@ Registers may further be described in terms of a bit-field and memories have an
 associated address width, total size and disassembler.
 
 Processor architectures are defined as a python class inheriting from the base
-class Architecture in `base.py`. This class has various properties which must be
-set according to the processor in question. See `architecture/base.py` for an
+class Architecture in base.py. This class has various properties which must be
+set according to the processor in question. See architecture/base.py for an
 overview of the fields.
 
 A few architectures have already been defined, the most complete (though not
@@ -82,13 +82,13 @@ on the use of the various classes can be found within the doc-strings of the
 classes in the architecture package.
 
 The most complex definitions needed are likely to be for the assemblers and
-disassemblers used by the architecture. See `architecture/(dis)assembler/base.py`
+disassemblers used by the architecture. See architecture/(dis)assembler/base.py
 for a description of the interface an assembler or disassembler should provide.
 
 Devices identify their architecture by a unique integer. Depending on the value
 given, different architectures will be selected. The mapping from number to
 architecture is specified in the get_architecture function in
-`architecture/__init__.py`. New architectures should be listed here.
+architecture/__init__.py. New architectures should be listed here.
 
 Notes
 `````
@@ -108,12 +108,12 @@ the back end is based on the KMD comms protocol. Code relating to the back-end
 is contained in the back_end package (in the directory of the same name).
 
 Two back-ends are provided which should prove adequate for most purposes.
-EmulatorBackEnd (`emulator.py`) is a back-end which starts an external emulator
+EmulatorBackEnd (emulator.py) is a back-end which starts an external emulator
 program in a subprocess (for example, Jimulator) and communicates via its
 standard input/output pipes. The other back-end is the SerialPortBackEnd
-(`serial_port.py`) which communicates with a device via a serial port.
+(serial_port.py) which communicates with a device via a serial port.
 
-Back-ends should inherit the base.BackEnd class in `back_end/base.py`. This class
+Back-ends should inherit the base.BackEnd class in back_end/base.py. This class
 implements the KMD protocol (see the doc-strings for details). Three methods
 read, write and flush must be defined on-top of the base's definitions. These
 should read/write/flush bytes coming from or going to the device.
@@ -138,7 +138,7 @@ communicating with the back-end.
 Because the features provided by the class are fairly diverse, it is split up
 into several mix-ins. These mix-in classes are designed to be inherited into the
 System to provide various useful features. These mix-ins are described in the
-doc-string at the top of `system.py`.
+doc-string at the top of system.py.
 
 By convention, accesses to the back-end should not fail but rather return dummy
 data. This vastly reduces the complexity of the GUI code and improves the user's
