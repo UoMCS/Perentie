@@ -70,8 +70,8 @@ Registers may further be described in terms of a bit-field and memories have an
 associated address width, total size and disassembler.
 
 Processor architectures are defined as a python class inheriting from the base
-class Architecture in base.py. This class has various properties which must be
-set according to the processor in question. See architecture/base.py for an
+class Architecture in `base.py`. This class has various properties which must be
+set according to the processor in question. See `architecture/base.py` for an
 overview of the fields.
 
 A few architectures have already been defined, the most complete (though not
@@ -82,13 +82,13 @@ on the use of the various classes can be found within the doc-strings of the
 classes in the architecture package.
 
 The most complex definitions needed are likely to be for the assemblers and
-disassemblers used by the architecture. See architecture/(dis)assembler/base.py
+disassemblers used by the architecture. See `architecture/(dis)assembler/base.py`
 for a description of the interface an assembler or disassembler should provide.
 
 Devices identify their architecture by a unique integer. Depending on the value
 given, different architectures will be selected. The mapping from number to
 architecture is specified in the get_architecture function in
-architecture/__init__.py. New architectures should be listed here.
+`architecture/__init__.py`. New architectures should be listed here.
 
 Notes
 `````
@@ -108,12 +108,12 @@ the back end is based on the KMD comms protocol. Code relating to the back-end
 is contained in the back_end package (in the directory of the same name).
 
 Two back-ends are provided which should prove adequate for most purposes.
-EmulatorBackEnd (emulator.py) is a back-end which starts an external emulator
+EmulatorBackEnd (`emulator.py`) is a back-end which starts an external emulator
 program in a subprocess (for example, Jimulator) and communicates via its
 standard input/output pipes. The other back-end is the SerialPortBackEnd
-(serial_port.py) which communicates with a device via a serial port.
+(`serial_port.py`) which communicates with a device via a serial port.
 
-Back-ends should inherit the base.BackEnd class in back_end/base.py. This class
+Back-ends should inherit the base.BackEnd class in `back_end/base.py`. This class
 implements the KMD protocol (see the doc-strings for details). Three methods
 read, write and flush must be defined on-top of the base's definitions. These
 should read/write/flush bytes coming from or going to the device.
@@ -138,7 +138,7 @@ communicating with the back-end.
 Because the features provided by the class are fairly diverse, it is split up
 into several mix-ins. These mix-in classes are designed to be inherited into the
 System to provide various useful features. These mix-ins are described in the
-doc-string at the top of system.py.
+doc-string at the top of `system.py`.
 
 By convention, accesses to the back-end should not fail but rather return dummy
 data. This vastly reduces the complexity of the GUI code and improves the user's
@@ -377,21 +377,21 @@ A method which fetches some data from the board (a slow process) and then
 updates the GUI::
 
 	class MyClass(object):
-		
+
 		...
-	
+
 		@RunInBackground()
 		def update_view(self, addr):
 			# The function starts execution in its own thread
-			
+
 			# Read a value from the board. This function blocks for some time before
 			# returning a value. Note: this operation must be thread-safe.
 			value = read_from_board(addr)
-			
+
 			# Once all work is done in the thread, execution is switched to the GTK thread
 			# by yielding.
 			yield
-			
+
 			# Update the widget directly (this is allowed as we're in the GTK thread).
 			self.widget.set_value(value)
 
@@ -406,9 +406,9 @@ A method which checks something in the GUI and uses the result to fetch some
 data from the board (a slow process) and then updates the GUI::
 
 	class MyClass(object):
-		
+
 		...
-	
+
 		@RunInBackground(start_in_gtk = True)
 		def update_view_from_gui(self):
 			# Because start_in_gtk is True, the function starts execution in the GTK
@@ -418,22 +418,22 @@ data from the board (a slow process) and then updates the GUI::
 			except ValueError, e:
 				# If the user entered something that didn't make sense, log the error
 				log_error(e)
-				
+
 				# By returning before we yield we terminate the call early and execution
 				# does not continue in another thread.
 				return
-			
+
 			yield
 			# Now we've yielded, we continue execution in a background thread as in
 			# example 1.
-			
+
 			# Read a value from the board at the address we just read out of a text-box.
 			value = read_from_board(addr)
-			
+
 			# Once all work is done in the thread, execution is switched to the GTK thread
 			# by yielding.
 			yield
-			
+
 			# Update the widget directly (this is allowed as we're in the GTK thread).
 			self.widget.set_value(value)
 
@@ -453,54 +453,54 @@ A method which takes a very long time to execute and displays its progress in a
 progress bar::
 
 	class MyClass(object):
-		
+
 		def __init__(self):
-			
+
 			...
-			
+
 			# We get the gtk.Adjustment object which represents the progress of the
 			# function decorated by load_memory_image_decorator by requesting it for
 			# this instance of MyClass from the decorator. (Note the slightly usual
 			# way you must request this).
 			adjustment = MyClass.load_memory_image_decorator(self)
-			
+
 			# This adjustment will be updated as the method executes and the progress
 			# monitor can use the events fired by the adjustment to update a progress
 			# bar.
 			self.progress_monitor.set_adjustment(adjustment)
-		
-		
+
+
 		...
-		
-		
+
+
 		# load_memory_image_decorator is a (static) refrence to a RunInBackground
 		# decorator which is interrogated to retrieve a gtk.Adjustment which
 		# contains progress information.
 		load_memory_image_decorator = RunInBackground()
-		
+
 		# We decorate the method with the update_with_progress_decorator object we
 		# created above
 		@load_memory_image_decorator
 		def load_memory_image(self, image_file):
 			# Execution begins in a background thread
-			
+
 			# Go through the image file, address-by-address...
 			num_entries = len(image_file)
 			for entry_num, (addr, value) in enumerate(image_file.get_data()):
 				# ...and write the value to the board
 				write_to_board(addr, value)
-				
+
 				# To indicate the progress of the operation, yield a tuple containing
 				# the entry number we're up to and the number of entries in total. This
 				# will not cause execution to leave the background thread but will cause
 				# an update to the gtk.Adjustment and thus the progress bar in the GUI.
 				yield (entry_num, num_entries)
-			
+
 			# Once all work is done in the thread we do an empty yield which finally
 			# returns us to the GTK thread. This action also resets the gtk.Adjustment
 			# to zero (i.e. resets the progress bar).
 			yield
-			
+
 			# Upade the display to reflect newly loaded data
 			self.update_display()
 
