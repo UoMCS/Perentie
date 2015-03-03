@@ -23,7 +23,7 @@ AUTHORS = [
 	"Jonathan Heathcote <mail@jhnet.co.uk>"
 ]
 
-COPYRIGHT = "Copyright 2013, The University of Manchester"
+COPYRIGHT = "Copyright 2015, The University of Manchester"
 
 # LICENSE is defined by the LICENSE file.
 
@@ -37,7 +37,7 @@ def _path(*path_parts):
 	"""
 	Get the path of the given file in the root of the program.
 	"""
-	
+
 	return os.path.join(os.path.dirname(__file__), *path_parts)
 
 
@@ -70,11 +70,11 @@ ICON = gtk.gdk.pixbuf_new_from_file(_path("logo", "icon_64.png"))
 ################################################################################
 
 class AboutDialog(gtk.AboutDialog):
-	
+
 	def __init__(self):
-		
+
 		gtk.AboutDialog.__init__(self)
-		
+
 		self.set_name(NAME)
 		self.set_version(VERSION)
 		self.set_copyright(COPYRIGHT)
@@ -91,10 +91,9 @@ def get_icon_list():
 	by window.set_icon_list.
 	"""
 	icons = []
-	
+
 	icon_paths = glob.glob(os.path.join(os.path.dirname(__file__), "logo", "icon_*.png"))
 	for icon_path in icon_paths:
 		icons.append(gtk.gdk.pixbuf_new_from_file(icon_path))
-	
-	return icons
 
+	return icons
