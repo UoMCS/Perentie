@@ -17,7 +17,7 @@ fledged debugging platform. This tool has been written based on the ideas of the
 Komodo Manchester Debugger (KMD) and aims to be backwards-compatible.
 """
 
-WEBSITE = "http://cs.man.ac.uk/"
+WEBSITE = "http://www.cs.manchester.ac.uk/"
 
 AUTHORS = [
 	"Jonathan Heathcote <mail@jhnet.co.uk>"
